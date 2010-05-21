@@ -24,13 +24,15 @@
 #include "match/maxmat4.h"
 #include "match/esa-map.h"
 #include "match/eis-voiditf.h"
+#include "match/matchmode_api.h"
 #include "tools/gt_maxmat4.h"
 
 
 
 typedef struct {
   bool mum,
-       mumcand,
+       mumreference,
+       maxmatch,
        nucleotidesonly,                      // matchnucleotidesonly
        bothdirections,                       // computebothdirections
        reversecomplement,                      // onlyreversecomplementmatches
@@ -63,7 +65,7 @@ static void gt_maxmat4_arguments_delete(void *tool_arguments)
 static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
 {
   GtMaxmat4Arguments *arguments = (GtMaxmat4Arguments*)tool_arguments;
-  GtOption *option_mum, *option_mumcand, *option_n, *option_l, 
+  GtOption *option_mum, *option_mumreference, *option_maxmatch, *option_n, *option_l, 
          *option_b, *option_r, *option_s, *option_c, *option_L;
   GtOptionParser *op;
 
@@ -82,12 +84,19 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
                                   &arguments->mum, false);
   gt_option_parser_add_option(op, option_mum);
 
-  /* -mumcand */
-  option_mumcand = gt_option_new_bool("mumcand", 
+  /* -mumreference */
+  option_mumreference = gt_option_new_bool("mumreference", 
                                       "compute MUM-candidates, i.e. maximal matches that are unique "
-                                      "in the subject-sequence but not necessarily in the query-sequence ", 
-                                      &arguments->mumcand, false);
-  gt_option_parser_add_option(op, option_mumcand);
+                                      "in the subject-sequence but not necessarily in the query-sequence "
+                                      "If none of options [mum, mumreference and maxmatch] are used, then the program will default to mumreference mode ", 
+                                      &arguments->mumreference, false);
+  gt_option_parser_add_option(op, option_mumreference);
+  
+  /* -maxmatch */
+  option_maxmatch = gt_option_new_bool("maxmatch", 
+                                      "compute all maximal matches, regardless of their uniqueness ", 
+                                      &arguments->maxmatch, false);
+  gt_option_parser_add_option(op, option_maxmatch);
 
   /* -n for matchnucleotidesonly */
   option_n = gt_option_new_bool("n", 
@@ -101,7 +110,7 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
                                  "set the minimum length of a match "
                                  "if not set, the default value is 20",
                                  &arguments->leastlength.valueunsignedlong,
-                                 2,(unsigned long) 1);
+                                 20,(unsigned long) 1);
   gt_option_parser_add_option(op, option_l);
   
   /* -b for computebothdirections */
@@ -131,7 +140,7 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
 
   /* -L for showsequencelengths */
   option_L = gt_option_new_bool("L", 
-                                "show the length of the query sequences on the header line",
+                                "show the length of the reference sequences and query sequences on the header line",
                                 &arguments->showsequencelengths, false);
   gt_option_parser_add_option(op, option_L);
 
@@ -140,7 +149,9 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
   gt_option_imply_either_2(option_c, option_b, option_r);
 
   /* option exclusions */
-  gt_option_exclude(option_mum, option_mumcand);
+  gt_option_exclude(option_mum, option_mumreference);
+  gt_option_exclude(option_mum, option_maxmatch);
+  gt_option_exclude(option_mumreference, option_maxmatch);
   gt_option_exclude(option_b, option_r);
 
   /* set minimal arugments */
@@ -196,14 +207,14 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   unsigned short idx;
   for (idx=arg+1; idx<argc; idx++)
   {
-	gt_str_array_add_cstr(queryfiles, argv[idx]); 
+	  gt_str_array_add_cstr(queryfiles, argv[idx]); 
   }
   
   /* load packed index in memory */
   gt_error_check(err);
   gt_assert(tool_arguments);
   logger = gt_logger_new(false, GT_LOGGER_DEFLT_PREFIX, stdout);
-  unsigned int mappedbits = SARR_ESQTAB;
+  unsigned int mappedbits = SARR_ESQTAB|SARR_SSPTAB|SARR_DESTAB|SARR_SDSTAB;
   
   // map suffixarray from referencefile, a referencefile contains maybe many sequence, is this merged in a suffixarray?
 	if (gt_mapsuffixarray(&suffixarray,
@@ -217,6 +228,7 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
 	} else
 	{
 		alphabet = gt_encseq_alphabet(suffixarray.encseq);
+		//alphabet =  gt_alphabet_new_dna();
 		// prefixlength = suffixarray.prefixlength;
 		totallength = gt_encseq_total_length(suffixarray.encseq);
 	}
@@ -238,29 +250,36 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
 
 	if (!haserr)
 	{
-		int readmode = GT_READMODE_FORWARD;  // default value is forward
-		if (arguments->reversecomplement) 
+		
+		// set match mode
+		int matchmode = GT_MATCHMODE_MUMREFERENCE;  
+		if (arguments->mum) 
 		{
-			readmode = GT_READMODE_REVCOMPL;
-			//printf ("%s \n", "reversecomplement is true, correspondent method is still in work");
+			matchmode = GT_MATCHMODE_MUM;
 		}
-		else if (arguments->bothdirections) 
+		else if (arguments->mumreference) 
 		{
-			readmode = 4;  // for both directions
-			//printf ("%s \n", "bothdirections is true, correspondent method is still in work");
+			matchmode = GT_MATCHMODE_MUMREFERENCE;
 		}
-		else  
+		else if (arguments->maxmatch) 
 		{
+			matchmode = GT_MATCHMODE_MAXMATCH;
+		}
+		
+
+    //unsigned long numofreferenceseq = gt_encseq_num_of_sequences(suffixarray.encseq);
+    //printf("# number of reference sequences = %lu\n",numofreferenceseq);
+
 			if (gt_findmum(suffixarray.encseq,
 										packedindex,
 										totallength,
 										alphabet,
 										queryfiles,
-										readmode,
+										matchmode,
 										arguments->leastlength,
 										arguments->nucleotidesonly,
-										//arguments->bothdirections,
-										//arguments->reversecomplement,
+										arguments->bothdirections,
+										arguments->reversecomplement,
 										arguments->showstring,
 										arguments->showreversepositions,
 										arguments->showsequencelengths,
@@ -269,7 +288,6 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
 			{
 				haserr = true;
 			}
-		}
 	}
  
 
