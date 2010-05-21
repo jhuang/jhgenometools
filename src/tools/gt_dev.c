@@ -37,6 +37,7 @@
 #include "tools/gt_skproto.h"
 #include "tools/gt_readreads.h"
 #include "tools/gt_trieins.h"
+#include "tools/gt_maxmat4.h"
 
 static void* gt_dev_arguments_new(void)
 {
@@ -60,6 +61,7 @@ static void* gt_dev_arguments_new(void)
   gt_toolbox_add_tool(dev_toolbox, "sfxmap", gt_sfxmap());
   gt_toolbox_add_tool(dev_toolbox, "skproto", gt_skproto());
   gt_toolbox_add(dev_toolbox, "trieins", gt_trieins);
+  gt_toolbox_add_tool(dev_toolbox, "maxmat4", gt_maxmat4());
   return dev_toolbox;
 }
 
