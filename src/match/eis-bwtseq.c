@@ -38,6 +38,8 @@
 #include "match/eis-suffixerator-interface.h"
 #include "match/eis-suffixarray-interface.h"
 
+#include "match/eis-voiditf.h"
+
 /**
  * @param alphabet ownership of alphabet is with the newly produced
  * sequence object if return value is not 0
@@ -192,6 +194,213 @@ getMatchBound(const BWTSeq *bwtSeq, const Symbol *query, size_t queryLen,
                                   (unsigned long) match->end);
   */
 }
+
+
+
+
+
+
+
+static void output(const GtAlphabet *alphabet,
+                                const GtUchar *start,
+                                unsigned long gmatchlength,
+                                unsigned long querystart,
+                                unsigned long subjectpos)
+{
+	
+  printf("%lu ",querystart);
+  printf("%lu",gmatchlength);
+  printf(" %lu",subjectpos);
+  (void) putchar(' ');
+  gt_alphabet_decode_seq_to_fp(alphabet,stdout,start + querystart,
+                               gmatchlength);
+  (void) putchar('\n');
+}
+
+unsigned long gt_packedindexmum(const BWTSeq *bwtSeq,
+                                const GtEncseq *encseq,
+                                const GtAlphabet *gtalphabet,
+                                unsigned long totallength,
+                                       unsigned long *subjectpos,  // subject position
+                                       const GtUchar *query,    // absolute query start position
+                                       const GtUchar *qstart,   // point position in query (qptr will be variable from the point) 
+                                       const GtUchar *qend,     // absolute query end position
+                                       GtReadmode readmode,
+                                       unsigned long leastlength)
+{
+  GtUchar cc;
+  GtUchar dbleftchar, dbrightchar;
+  const GtUchar *qptr;
+  struct matchBound bwtbound;
+  struct GtUlongPair seqpospair;
+  Symbol curSym;
+  unsigned long matchlength = 0;
+  const MRAEnc *alphabet;
+  unsigned long bwtboundi;
+
+  gt_assert(bwtSeq && qstart);
+  alphabet = BWTSeqGetAlphabet(bwtSeq);
+  qptr = qstart;
+  
+  
+  
+  cc = *qptr;
+  ////printf("# %s\n","-------------------------------");
+  ////printf("# start cc=%u\n",cc);
+  if (ISSPECIAL(cc))
+  {
+    return 0;
+  }
+  curSym = MRAEncMapSymbol(alphabet, cc);
+  bwtbound.start = bwtSeq->count[curSym];
+  bwtbound.end = bwtSeq->count[curSym+1];
+  /*
+  printf("# bounds=%lu,%lu = %lu"
+          " occurrences\n",
+         bwtbound.start,
+         bwtbound.end,
+         bwtbound.end - bwtbound.start);*/
+    
+	matchlength = (unsigned long) (qptr - qstart + 1);        
+  qptr++;     
+       
+  // 如果把 qptr global化，qptr 会在内while循环中，就reach qend,所以只有打印一次。 但是这是错误的。                                                 
+  while (qptr < qend && bwtbound.start < bwtbound.end)  // or bwtbound.start+1<=bwtbound.end
+  {
+    cc = *qptr;
+    //printf("# cc=%u\n",cc);
+    if (ISSPECIAL (cc))
+    {
+      return 0;
+    }
+    curSym = MRAEncMapSymbol(alphabet, cc);
+    seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
+                                             bwtbound.start,bwtbound.end);
+    bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
+    bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;
+      
+    /*
+    printf("# bounds=%lu,%lu = %lu"
+            " occurrences, seqpospair=%lu,%lu\n",
+           bwtbound.start,
+           bwtbound.end,
+           bwtbound.end - bwtbound.start,
+           seqpospair.a, seqpospair.b);
+           * */
+           
+    // 虽然每次matchlength最到了最后，但是在这里根据 qptr的值重新被赋予新值，因为pqtr每次只增加1，所以...35,36,37,38       
+    matchlength = (unsigned long) (qptr - qstart + 1);
+    //printf("# matchlength=%lu\n",matchlength);
+    //if (matchlength == leastlength)
+                                      // for-loop has only one record with the limit
+                                      // 后面部分消失是因为后面的从qptr开始的suffix不符合左最大性或右最大性。
+                                      // 出现四次是因为后面四个字符是在一行中一个接一个的延了四次，都符合条件。
+    if ( (matchlength == leastlength) /*&& (bwtbound.start+1 == bwtbound.end)*/ )
+    {
+			//unsigned long temp;
+			for (bwtboundi=bwtbound.start; bwtboundi < bwtbound.end; bwtboundi++) 
+			{ 
+								    *subjectpos = gt_voidpackedfindfirstmatchconvert((const FMindex *)bwtSeq,
+                                                       bwtboundi,
+                                                       matchlength);
+            //*subjectpos = gt_bwtseqfirstmatch(bwtSeq,bwtboundi)- 1;
+            //printf("# *bwtboundstart=%lu\n",bwtbound.start);
+            //printf("# *bwtboundend=%lu\n",bwtbound.end);
+            //printf("# *subjectpos=%lu\n",*subjectpos);
+            //unsigned long lfvaluei = BWTSeqLFMap(bwtSeq, bwtboundi, NULL);
+            //printf("# *LF(%lu)=%lu\n",lfvaluei,bwtboundi);
+            //unsigned long lfvaluei2 = BWTSeqLFMap(bwtSeq, lfvaluei, NULL);
+            
+            //printf("# *LF(%lu)=%lu\n",lfvaluei2,lfvaluei);
+            // the sequence is a suffix of other row, when LF value of the row locate also in range 
+
+            ////if (lfvaluei>=bwtbound.start && lfvaluei<=bwtbound.end) {
+							////continue;
+						////}
+            
+            bool isleftmaximal = false;
+						
+						////printf("# *(qptr)=%u\n",*(qptr));
+
+						// check the left maximal
+						if (*subjectpos==0 || qstart==query ) {
+							isleftmaximal = true;
+						} else {
+							dbleftchar = gt_encseq_get_encoded_char(encseq, 
+																				*subjectpos-1,
+																				readmode);
+							////printf("# dbleftchar=%u\n",dbleftchar);
+							////printf("# *(qstart-1)=%u\n",*(qstart-1));
+							if (ISSPECIAL(dbleftchar) || dbleftchar != *(qstart-1) ) {
+								isleftmaximal = true;
+							}	else {
+								isleftmaximal = false;
+							}
+					  }		
+																		
+						// check the right maximal													
+						if (isleftmaximal) {					
+							bool isrightmaximal = false;
+							// 每条支线单独前进
+              unsigned long matchlengthi = matchlength;
+              // 内循环指针用来检查右最大性
+              const GtUchar *qptri = qptr;
+						  do {
+								if (*subjectpos+matchlengthi==totallength || qptri+1==qend ) {
+									// if it reaches end of the query or reference sequence -> output
+									printf ("%s \n", "it reaches end of the query or reference sequence");
+
+									isrightmaximal = true;
+									
+								}
+								else
+								{
+									dbrightchar = gt_encseq_get_encoded_char(encseq, 
+																						*subjectpos+matchlengthi,
+																						readmode);												
+									
+									//printf("# dbrightchar=%u\n",dbrightchar);
+									//printf("# *(qptri+1)=%u\n",*(qptri+1));
+									//printf("# qptri+1=%lu\n",(unsigned long)(qptri+1));
+									//printf("# qend=%lu\n",(unsigned long)qend);
+									
+
+									if ( (dbrightchar != *(qptri+1)) || ISSPECIAL(dbrightchar) ) {
+                    //printf("# dbrightchar=%u\n",dbrightchar);
+                    //printf("# *(qptri+1)=%u\n",*(qptri+1));
+										isrightmaximal = true;
+									} else {
+										// if it is not right maximal -> extension
+										isrightmaximal = false;
+										qptri++;
+										matchlengthi++;
+										//printf("# matchlengthi=%lu\n",matchlengthi);
+									}
+									////printf ("%s%lu \n", "it reaches here", matchlengthi);
+									
+								}
+						  } while (!isrightmaximal);	 
+						  //return matchlengthi; 
+    
+							output(gtalphabet, query, matchlengthi,
+												 (unsigned long) (qstart-query),    
+												 *subjectpos);
+					  }
+		  }	
+
+    }
+
+    // 共同前进
+    qptr++;    
+  }
+
+    
+  return matchlength;
+}
+
+
+
+
 
 unsigned long gt_packedindexuniqueforward(const BWTSeq *bwtSeq,
                                        const GtUchar *qstart,

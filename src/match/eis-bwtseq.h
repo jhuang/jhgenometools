@@ -31,6 +31,9 @@
 #include "match/eis-mrangealphabet.h"
 #include "match/eis-bwtseq-param.h"
 
+#include "core/readmode.h"
+#include "core/encseq.h"
+
 /* TODO:
  * - implement other index types
  */
@@ -492,6 +495,18 @@ gt_EMINumMatchesTotal(const BWTSeqExactMatchesIterator *iter);
 unsigned long
 gt_EMINumMatchesLeft(const BWTSeqExactMatchesIterator *iter);
 
+
+unsigned long gt_packedindexmum(const BWTSeq *bwtSeq,
+                                const GtEncseq *encseq,
+                                const GtAlphabet *gtalphabet,
+                                unsigned long totallength,
+                                       unsigned long *subjectpos,  // subject position
+                                       const GtUchar *query,    // absolute query start position
+                                       const GtUchar *qstart,   // point position in query (qptr will be variable from the point) 
+                                       const GtUchar *qend,     // absolute query end position
+                                       GtReadmode readmode,
+                                       unsigned long leastlength);
+                                       
 /**
  * @brief for packed index (given as void pointer), compute the longest
  * prefix of string in range between qstart and qend that occurs exactly
