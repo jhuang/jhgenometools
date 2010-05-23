@@ -161,6 +161,7 @@ if not $arguments["nocairo"] then
 end
 require 'gt_env_options_include'
 require 'scripts_include'
+require 'gt_maxmat4_include.rb'
 
 if $arguments["gcov"] then
   require 'gcov_include' # must be last
