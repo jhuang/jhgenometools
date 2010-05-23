@@ -388,7 +388,7 @@ unsigned long gt_packedindexmumreference(const BWTSeq *bwtSeq,
 						  } while (!isrightmaximal);
 						  // from absolute position to relative position, TODO: check if withssptab==true, how?
 						  //if (encseq->ssptab != NULL) {
-						    unsigned long seqnum = gt_encseq_pos2seqnum(encseq, *subjectpos);
+						    unsigned long seqnum = gt_encseq_seqnum(encseq, *subjectpos);
 						    *subjectpos = *subjectpos - gt_encseq_seqstartpos(encseq, seqnum);				    
 							//}
 							//else 
@@ -534,7 +534,7 @@ unsigned long gt_packedindexmaxmatch(const BWTSeq *bwtSeq,
 								}
 						  } while (!isrightmaximal);	
 						  // from absolute position to relative position
-						  unsigned long seqnum = gt_encseq_pos2seqnum(encseq, *subjectpos);
+						  unsigned long seqnum = gt_encseq_seqnum(encseq, *subjectpos);
 						  *subjectpos = *subjectpos - gt_encseq_seqstartpos(encseq, seqnum);
 						       
 						  const char *referencedesc;
