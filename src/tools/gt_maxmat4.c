@@ -219,7 +219,7 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   // map suffixarray from referencefile, a referencefile contains maybe many sequence, is this merged in a suffixarray?
 	if (gt_mapsuffixarray(&suffixarray,
 						 mappedbits,
-						 referencefile,
+						 gt_str_get(referencefile),
 						 logger,
 						 err) != 0)
 	{
@@ -236,7 +236,7 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
 	if (!haserr)
 	{
 		// load packed index from suffxiarray
-		packedindex = gt_loadvoidBWTSeqForSA(referencefile,
+		packedindex = gt_loadvoidBWTSeqForSA(gt_str_get(referencefile),
 											&suffixarray,
 											totallength,
 											false,

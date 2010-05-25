@@ -122,16 +122,29 @@ static void showunitnum(GT_UNUSED uint64_t unitnum,
 {
 	Rangespecinfo *rangespecinfo = (Rangespecinfo *) info;
   //printf("unit " Formatuint64_t, PRINTuint64_tcast(unitnum));
+	////char *pch = strchr(querydesc,' ');
+	////unsigned long querydesclength = (unsigned long)(pch-querydesc);
   if (querydesc != NULL && querydesc[0] != '\0')
   {
+		////char *buf = gt_calloc(1, sizeof (char) * (querydesclength +1));  
+    ////(void) strncpy(buf, querydesc, querydesclength);
 		if (rangespecinfo->showsequencelengths)
 		{
-			printf("> %s  Len = %lu",querydesc,querylen); // first line is query sequence
+			if (rangespecinfo->queryreadmode==GT_READMODE_FORWARD)
+		  {
+			  printf("> %s  Len = %lu",querydesc,querylen);
+			}
+			else
+			{
+				printf("> %s Reverse  Len = %lu",querydesc,querylen);
+			}
+			//printf("> %s  Len = %lu",buf,querylen); // first line is query sequence
 		} 
 		else
 		{
 			printf("> %s",querydesc);
 		} 
+		////gt_free(buf);
   }
   printf("\n");
 }

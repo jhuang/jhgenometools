@@ -211,39 +211,44 @@ static void output(const GtAlphabet *alphabet,
                                 unsigned long subjectpos,
                                 const char *referencedesc,
                                 unsigned long referencedesclength,
-                                unsigned long referencelength,
-                                //const GtReadmode qreadmode,  // 可以改进存到 rangespecinfo里。
+                                GT_UNUSED unsigned long referencelength,
+                                unsigned long seqtotalnum,
                                 Rangespecinfo *rangespecinfo)
 {
-  //Rangespecinfo *rangespecinfo = (Rangespecinfo *) info;
-
-	if (referencedesc != NULL && referencedesc[0] != '\0')
+	if (referencedesc != NULL && referencedesc[0] != '\0' && seqtotalnum!=1)
   {
 		char *buf = gt_calloc(1, sizeof (char) * (referencedesclength +1));  
     (void) strncpy(buf, referencedesc, referencedesclength);
-		if (rangespecinfo->showsequencelengths)
-		{
-			if (rangespecinfo->queryreadmode==GT_READMODE_FORWARD)
-		  {
-			  printf("  %s  Len = %lu  ",buf,referencelength);
-			}
-			else
-			{
-				printf("  %s  Reverse  Len = %lu  ",buf,referencelength);
-			}
-		} 
-		else
-		{
-			printf("  %s  ",buf);
-		}    
+		//if (rangespecinfo->showsequencelengths)
+		//{
+			//if (rangespecinfo->queryreadmode==GT_READMODE_FORWARD)
+		  //{
+			  //printf("  %s  Len = %lu",buf,referencelength);
+			//}
+			//else
+			//{
+				//printf("  %s  Reverse  Len = %lu",buf,referencelength);
+			//}
+		//} 
+		//else
+		//{
+			printf("  %s",buf);
+		//}    
     gt_free(buf);
   }
 
-  printf("\n");
-	printf("%8lu  ",subjectpos+1);
+  //printf("\n");
+	printf("   %8lu  ",subjectpos+1);
 	if (rangespecinfo->showreversepositions)
   {	
-    printf("%8lu  ",querylength-querypos);
+		if (rangespecinfo->queryreadmode==GT_READMODE_REVCOMPL)
+		{
+			printf("%8lu  ",querylength-querypos);
+		}
+		else
+		{
+		  printf("%8lu  ",querypos+1);
+		}
 	} 
 	else
 	{
@@ -294,7 +299,6 @@ unsigned long gt_packedindexmumreference(const BWTSeq *bwtSeq,
   Symbol curSym;
   unsigned long matchlength = 0;
   const MRAEnc *alphabet;
-  unsigned long bwtboundi;//, i;
   Rangespecinfo *rangespecinfo = (Rangespecinfo *) info;
   unsigned long leastlength = (rangespecinfo->leastlength).valueunsignedlong;
 
@@ -335,11 +339,12 @@ unsigned long gt_packedindexmumreference(const BWTSeq *bwtSeq,
 
     if ( (matchlength >= leastlength) && (bwtbound.start+1 == bwtbound.end) )
     {
-			for (bwtboundi=bwtbound.start; bwtboundi < bwtbound.end; bwtboundi++) 
-			{ 
+
 						*subjectpos = gt_voidpackedfindfirstmatchconvert((const FMindex *)bwtSeq,
-                                                       bwtboundi,
+                                                       bwtbound.start,
                                                        matchlength);
+            ////printf("# *subjectpos=%lu\n",*subjectpos);
+            
 						// check the left maximal        
             bool isleftmaximal = false;					
 						if (*subjectpos==0 || qstart==query ) {
@@ -359,36 +364,37 @@ unsigned long gt_packedindexmumreference(const BWTSeq *bwtSeq,
 																		
 						// every line moves forwards						
 						if (isleftmaximal) {									
-              unsigned long matchlengthi = matchlength;
                
               // check the right maximal	
               bool isrightmaximal = false;
 						  do {
-								if (*subjectpos+matchlengthi==totallength || qptr+1==qend ) {
+								if (*subjectpos+matchlength==totallength || qptr+1==qend ) {
 									// if it reaches end of the reference or query sequence -> output
-									//printf ("%s \n", "it reaches end of the query or reference sequence");
+									////printf ("%s \n", "it reaches end of the query or reference sequence");
 									isrightmaximal = true;
 									
 								}
 								else
 								{
 									dbrightchar = gt_encseq_get_encoded_char(encseq, 
-																						*subjectpos+matchlengthi,
+																						*subjectpos+matchlength,
 																						GT_READMODE_FORWARD);												
-																	
+									////printf("# dbrightchar=%u\n",dbrightchar);
+							    ////printf("# *(qptr+1)=%u\n",*(qptr+1));								
 									if ( (dbrightchar != *(qptr+1)) || ISSPECIAL(dbrightchar) ) {
 										isrightmaximal = true;
 									} else {
 										// if it is not right maximal -> extension
 										isrightmaximal = false;
 										qptr++;
-										matchlengthi++;
+										matchlength++;
 									}							
 								}
 						  } while (!isrightmaximal);
 						  // from absolute position to relative position, TODO: check if withssptab==true, how?
 						  //if (encseq->ssptab != NULL) {
 						    unsigned long seqnum = gt_encseq_seqnum(encseq, *subjectpos);
+						    unsigned long seqtotalnum = gt_encseq_num_of_sequences(encseq);
 						    *subjectpos = *subjectpos - gt_encseq_seqstartpos(encseq, seqnum);				    
 							//}
 							//else 
@@ -399,16 +405,18 @@ unsigned long gt_packedindexmumreference(const BWTSeq *bwtSeq,
 							//char *referencedesc = NULL;
 							unsigned long referencedesclength;
 							referencedesc = gt_encseq_description(encseq, &referencedesclength, seqnum);
+							char *pch = strchr(referencedesc,' ');
+							referencedesclength = (unsigned long)(pch-referencedesc);
 
-							output(gtalphabet, query, matchlengthi,
+							output(gtalphabet, query, matchlength,
 												 (unsigned long) (qstart-query),   
 												 (unsigned long) (qend-query),    
-												 *subjectpos, referencedesc, referencedesclength,gt_encseq_seqlength(encseq,seqnum),
+												 *subjectpos, referencedesc, referencedesclength,gt_encseq_seqlength(encseq,seqnum),seqtotalnum,
 												 rangespecinfo);	
-							//FREESPACE(referencedesc);		
-							// return matchlengthi; 
-					  }
-		  }	
+							//FREESPACE(referencedesc);	
+							//break;	
+							return matchlength;    // break process
+					  }	
 
     }
 
@@ -535,21 +543,26 @@ unsigned long gt_packedindexmaxmatch(const BWTSeq *bwtSeq,
 						  } while (!isrightmaximal);	
 						  // from absolute position to relative position
 						  unsigned long seqnum = gt_encseq_seqnum(encseq, *subjectpos);
+						  unsigned long seqtotalnum = gt_encseq_num_of_sequences(encseq);
 						  *subjectpos = *subjectpos - gt_encseq_seqstartpos(encseq, seqnum);
 						       
 						  const char *referencedesc;
 							unsigned long referencedesclength;
 							referencedesc = gt_encseq_description(encseq, &referencedesclength, seqnum);
+							char *pch = strchr(referencedesc,' ');
+							referencedesclength = (unsigned long)(pch-referencedesc);
 							
 							output(gtalphabet, query, matchlengthi,
 												 (unsigned long) (qstart-query), 
 												 (unsigned long) (qend-query),      
-												 *subjectpos, referencedesc, referencedesclength,gt_encseq_seqlength(encseq,seqnum),
+												 *subjectpos, referencedesc, referencedesclength,gt_encseq_seqlength(encseq,seqnum),seqtotalnum,
 												 rangespecinfo);
 							//FREESPACE(referencedesc);					 
 							//return matchlengthi; 
 					  }
-		  }	
+		  }
+		  //break;
+		  return matchlength;	
 
     }
 
