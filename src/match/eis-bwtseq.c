@@ -260,8 +260,8 @@ static void output(const GtAlphabet *alphabet,
   {
 		gt_alphabet_decode_seq_to_fp(alphabet,stdout,start + querypos,
 																 gmatchlength);
+	  (void) putchar('\n');															 
 	}
-  (void) putchar('\n');
 }
 
 //static unsigned long lcp(GtUchar *start1,GtUchar *end1,GtUchar *start2,GtUchar *end2)
