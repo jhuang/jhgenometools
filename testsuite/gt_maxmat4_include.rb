@@ -7,6 +7,12 @@
             #"RandomN.fna",
             #"TTT-small.fna",
             #"trna_glutamine.fna"]
+allfiles = ["Atinsert.fna",
+            "Random-Small.fna",
+            "Random159.fna",
+            "RandomN.fna",
+            "trna_glutamine.fna"]
+
 
 repfindtestfiles=["Duplicate.fna",
                   "Wildcards.fna",
@@ -42,38 +48,6 @@ def determinemaxmatchminlength(reffile)
 end
 
 
-#def checktagerator(queryfile,ms)
-  #run "#{$bin}gt shredder -minlength 12 -maxlength 15 #{queryfile} | " +
-      #"#{$bin}gt seqfilter -minlength 12 - | " +
-      #"sed -e \'s/^>.*/>/\' > patternfile"
-  #if File.size("patternfile") > 0
-    #run_test("#{$bin}gt tagerator -rw -cmp -e 0 -esa sfx -q patternfile",
-             #:maxtime => 100)
-    #run_test("#{$bin}gt tagerator -rw -cmp -e 1 -esa sfx -q patternfile " +
-             #"-withwildcards",:maxtime => 100)
-    #run_test("#{$bin}gt tagerator -rw -cmp -e 2 -esa sfx -q patternfile " +
-             #"-withwildcards",:maxtime => 100)
-    #run_test("#{$bin}gt tagerator -rw -cmp -esa sfx -q patternfile " +
-             #" -maxocc 10",
-             #:maxtime => 100)
-    #run_test("#{$bin}gt tagerator -rw -cmp -e 0 -pck pck -q patternfile",
-             #:maxtime => 100)
-    #run_test("#{$bin}gt tagerator -rw -cmp -e 1 -pck pck -q patternfile",
-             #:maxtime => 100)
-    #run_test("#{$bin}gt tagerator -rw -cmp -e 2 -pck pck -q patternfile",
-             #:maxtime => 200)
-    #run_test("#{$bin}gt tagerator -rw -cmp -pck pck -q patternfile " +
-             #"-maxocc 10",
-             #:maxtime => 100)
-  #end
-#end
-
-
-
-
-
-
-
 #def determineminlength(reffile)
   #if reffile == 'Duplicate.fna'
     #return 6
@@ -97,20 +71,7 @@ end
 
 
 
-## 自身检查，在我这里没有
-#def checkrepfind(reffile)
-  #reffilepath=addfilepath(reffile)
-  #run_test("#{$bin}gt suffixerator -algbds 3 40 120 -db " +
-           #"#{reffilepath} -indexname sfxidx -dna -suf -tis -lcp -ssp -pl",
-           #:maxtime => 320)
-  #minlength = determineminlength(reffile)
-  #run_test("#{$bin}gt repfind -l #{minlength} -ii sfxidx", :maxtime => 320)
-  #resultfile="#{$gttestdata}repfind-result/#{reffile}.result"
-  #run "cmp -s #{$last_stdout} #{resultfile}"
-  #run_test("#{$bin}gt repfind -l #{minlength} -r -ii sfxidx", :maxtime => 320)
-  #resultfile="#{$gttestdata}repfind-result/#{reffile}-r.result"
-  #run "cmp -s #{$last_stdout} #{resultfile}"
-#end
+
 
 
 
@@ -195,64 +156,60 @@ end
   #run_test "#{$bin}gt repfind -samples 40 -l 6 -ii sfx",:maxtime => 600  # test time not exceed the limited time
 #end
 
-#allfiles.each do |reffile|
-  #allfiles.each do |queryfile|
-    #if queryfile != reffile
-      #Name "gt greedyfwdmat #{reffile} #{queryfile}"
-      #Keywords "gt_greedyfwdmat small"
-      #Test do
-        #createandcheckgreedyfwdmat("#{$testdata}/#{reffile}",
-                                   #"#{$testdata}/#{queryfile}")
-        #checktagerator("#{$testdata}/#{reffile}",
-                       #"#{$testdata}/#{queryfile}")
-        #run "rm -f sfx.* fmi.* pck.*"
-      #end
-    #end
-  #end
-#end
 
-#allfiles.each do |reffile|
-  #allfiles.each do |queryfile|
-    #if queryfile != reffile
-      #Name "gt idxlocali #{reffile} #{queryfile}"
-      #Keywords "gt_idxlocali"
-      #Test do
-        #run("#{$bin}gt packedindex mkindex -ssp -tis -indexname pck -db " +
-            #"#{$testdata}/#{reffile} -sprank -dna -pl -bsize 10 " +
-            #"-locfreq 32 -dir rev",
-            #:maxtime => 100)
-        #run_test("#{$bin}gt dev idxlocali -s -th 7 -pck pck " +
-                 #"-q #{$testdata}/#{queryfile}",
-                 #:maxtime => 100)
-        #run_test("#{$bin}gt dev idxlocali -s -th 7 -pck pck -online " +
-                 #"-q #{$testdata}/#{queryfile}",
-                 #:maxtime => 100)
-        #run_test "#{$bin}gt suffixerator -indexname sfx -ssp -tis -suf -dna " +
-                 #"-v -db #{$testdata}/#{reffile}"
-        #run_test("#{$bin}gt dev idxlocali -s -th 7 -esa sfx " +
-                 #"-q #{$testdata}/#{queryfile}",
-                 #:maxtime => 100)
-        #run_test("#{$bin}gt dev idxlocali -s -th 7 -esa sfx -online " +
-                 #"-q #{$testdata}/#{queryfile}",
-                 #:maxtime => 100)
-      #end
-    #end
-  #end
-#end
+# format repfind output to maxmat4 output 
+def formatrepfindoutput(filename)
+	if (File.exist?(filename))
+		begin 
+			file = File.new(filename, "r")    
+		rescue
+			STDERR.print "Could not open file #{filename}!\n"
+			exit 1
+		end
+	else
+		STDERR.print "File #{filename} does not exist!\n"
+		exit 1
+	end
 
-#allfiles.each do |reffile|
-  #Name "gt packedindex #{reffile}"
-  #Keywords "gt_packedindex small"
-  #Test do
-    #run_test("#{$bin}gt packedindex mkindex -tis -ssp -indexname pck " +
-             #"-sprank -db #{$testdata}/#{reffile} -dna -pl -bsize 10 " +
-             #" -locfreq 32 -dir rev",
-             #:maxtime => 1200)
-  #end
-#end
+	data = file.readlines() 
+	output = File.new(filename, "w")
+	data.each do |line|
+		line.strip!
+		line_data = line.split(%r{\s+})
+			
+		output.printf("%d %d %s\n",line_data[2].to_i+1, line_data[6].to_i+1, line_data[0])
+	end
+	output.close
+end
 
 
+def formatmaxmat4output(filename)
+	if (File.exist?(filename))
+		begin 
+			file = File.new(filename, "r")    
+		rescue
+			STDERR.print "Could not open file #{filename}!\n"
+			exit 1
+		end
+	else
+		STDERR.print "File #{filename} does not exist!\n"
+		exit 1
+	end
 
+	data = file.readlines() 
+	output = File.new(filename, "w")
+	data.each do |line|
+		line.strip!
+		line_data = line.split(%r{\s+})
+			
+	  if (line_data.length==4) then		
+		  output.printf("%d %d %d\n",line_data[1].to_i, line_data[2].to_i, line_data[3].to_i)
+		elsif (line_data.length==3) then	
+		  output.printf("%d %d %d\n",line_data[0].to_i, line_data[1].to_i, line_data[2].to_i)
+		end	
+	end
+	output.close
+end
 
 
 def checkmaxmat4withrepfind(reffile,queryfile,minlength)
@@ -260,15 +217,21 @@ def checkmaxmat4withrepfind(reffile,queryfile,minlength)
   #queryfilepath=addfilepath(queryfile)
   reffilepath="#{$testdata}#{reffile}"
   queryfilepath="#{$testdata}#{queryfile}"
+  #reffile="peakseq.fa"
+  #queryfile="query.fa"
+  #reffilepath="/home/jiabin/fasta/peakseq.fa"
+  #queryfilepath="/home/jiabin/fasta/query.fa"
   
   # generate repfind result
   idxname=reffile + "-idx"
   run_test "#{$bin}gt suffixerator -algbds 3 40 120 -db " +
            "#{reffilepath} -indexname #{idxname} -dna -suf -tis -lcp -ssp -pl"
-  run_test("#{$bin}gt repfind -v -l #{minlength} -ii #{idxname} -q #{queryfilepath}",
+  run_test("#{$bin}gt repfind -l #{minlength} -ii #{idxname} -q #{queryfilepath}",
            :maxtime => 320)
-  run "sort #{$last_stdout}"
+  formatrepfindoutput("#{$last_stdout}")
+  run "sed -e '/^\s*$/d' #{$last_stdout} | sort"
   run "mv #{$last_stdout} repfind.result"
+  
     
   # generate maxmat4 result 
   pckname=reffile + "-pck"                                                 
@@ -281,7 +244,8 @@ def checkmaxmat4withrepfind(reffile,queryfile,minlength)
       
   #run "#{$bin}gt prebwt -maxdepth 4 -pck pck"
   #run "#{$bin}gt matstat -verify(uniquesub) -output querypos -min 1 -max 20 -query #{queryfile} -pck pck"
-  run_test("#{$bin}gt dev maxmat4 -b -l #{minlength} -L -s -c #{pckname} #{queryfilepath}", :maxtime => 320)
+  run_test("#{$bin}gt dev maxmat4 -maxmatch -l #{minlength} -L #{pckname} #{queryfilepath}", :maxtime => 320)
+  formatmaxmat4output("#{$last_stdout}")
   run "sed -e '/^>/d' #{$last_stdout} | sort"            
   run "mv #{$last_stdout} maxmat4.result"
   
@@ -290,11 +254,26 @@ def checkmaxmat4withrepfind(reffile,queryfile,minlength)
   run "diff -w repfind.result maxmat4.result"
   
   # remove both results
-  #run "rm -f sfx.* fmi.* pck.*"
+  #run "rm -f repfind.result maxmat4.result"
 end
 
-Name "check maxmat4 at1MB versus U89959_genomic.fas comparing with repfind"
-Keywords "check_maxmat4_with_repfind"
-Test do
-  checkmaxmat4withrepfind("at1MB","U89959_genomic.fas",15)
+#Name "check maxmat4 at1MB versus U89959_genomic.fas comparing with repfind"
+#Keywords "check_maxmat4_with_repfind"
+#Test do
+  #checkmaxmat4withrepfind("at1MB","U89959_genomic.fas",15)
+#end
+
+
+allfiles.each do |reffile|
+  allfiles.each do |queryfile|
+    [12,15,18,21,24].each do |minlength| 
+			if queryfile != reffile
+				Name "check maxmat4 -l #{minlength} #{reffile} versus #{queryfile} comparing with repfind"
+				Keywords "check_maxmat4_with_repfind"
+				Test do
+					checkmaxmat4withrepfind("at1MB","U89959_genomic.fas",minlength)
+				end
+      end
+    end
+  end
 end
