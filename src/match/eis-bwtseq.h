@@ -498,29 +498,45 @@ unsigned long
 gt_EMINumMatchesLeft(const BWTSeqExactMatchesIterator *iter);
 
 
-//typedef struct Rangespecinfo Rangespecinfo;
-typedef struct 
+/*
+  The following structure stores MUM candidates. That is, maximal matches
+  which are unique in the subject-sequence but not necessarily in the
+  query sequence.
+*/
+
+typedef struct
 {
-  bool nucleotidesonly,                     
-       //bothdirections,                    
-       //reversecomplement,                    
-       showstring,                           
-       showreversepositions,                     
-       showsequencelengths;   
-  Definedunsignedlong leastlength;
-  GtReadmode queryreadmode;
-} Rangespecinfo;
+  unsigned long mumlength,    // length of the mum
+       dbstart,      // start position in the subject-sequence
+       queryseq,     // number of the query sequence
+       querystart;   // start position in the query sequence      
+} MUMcandidate;    
+
+
+//typedef struct Rangespecinfo Rangespecinfo;
+//typedef struct 
+//{
+	//GtArray mumcandtab;
+  //bool nucleotidesonly,                     
+       ////bothdirections,                    
+       ////reversecomplement,                    
+       //showstring,                           
+       //showreversepositions,                     
+       //showsequencelengths;   
+  //Definedunsignedlong leastlength;
+  //GtReadmode queryreadmode;
+//} Rangespecinfo;
 
 unsigned long gt_packedindexmumreference(const BWTSeq *bwtSeq,
                                 const GtEncseq *encseq,
-                                const GtAlphabet *gtalphabet,
                                 unsigned long totallength,
+                                unsigned long leastlength,
                                        unsigned long *subjectpos,  // subject position
                                        const GtUchar *query,    // absolute query start position
                                        const GtUchar *qstart,   // point position in query (qptr will be variable from the point) 
-                                       const GtUchar *qend,     // absolute query end position
-                                       //const GtReadmode qreadmode,
-                                       void *info);             // Rangespecinfo
+                                       const GtUchar *qend     // absolute query end position
+                                       //const GtReadmode qreadmode
+                                       );   
                                        
 unsigned long gt_packedindexmaxmatch(const BWTSeq *bwtSeq,
                                 const GtEncseq *encseq,

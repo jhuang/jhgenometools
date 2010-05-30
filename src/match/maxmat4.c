@@ -35,92 +35,142 @@
 #include "extended/reverse.h"
 
 
-
-typedef void (*Preprocessgmatchlength)(uint64_t,
+typedef void (*Preprocessmatchfunction)(uint64_t,
                                        unsigned long querylen,
                                        const char *,
                                        void *);
-
+typedef unsigned long (*Processmatchfunction)(const BWTSeq *,
+                                const GtEncseq *,
+                                unsigned long,
+                                unsigned long,
+                                       unsigned long *,  
+                                       const GtUchar *,   
+                                       const GtUchar *,   
+                                       const GtUchar *    
+                                       );
+typedef void (*Postprocessmatchfunction)(const GtAlphabet *,
+                                const GtUchar *,
+                                unsigned long,
+                                unsigned long,
+                                unsigned long,
+                                unsigned long,
+                                void *);
+                                
+                                
 typedef struct
 {
   const void *genericindex;
   unsigned long totallength;
   GtMatchmode matchmode;
   const GtAlphabet *alphabet;
-  Preprocessgmatchlength preprocessgmatchlength;
-  void *processinfo;
+  Preprocessmatchfunction preprocessmatchfunction;
+  Processmatchfunction processmatchfunction;
+  Postprocessmatchfunction postprocessmatchfunction;
+  //void *processinfo;
   const GtEncseq *encseq;
-} Substringinfo;
+  
+  //GtArray mumcandtab;
+  bool nucleotidesonly,                                      
+       showstring,                           
+       showreversepositions,                     
+       showsequencelengths;   
+  Definedunsignedlong leastlength;
+  GtReadmode queryreadmode;
+} Matchprocessinfo;  
 
 
-static void matchposinsinglesequence(Substringinfo *substringinfo,
+
+/*
+  Functions processing a maximal match are of the following type.
+*/
+
+//typedef Sint (*Processmatchfunction)
+             //(void *,Uint,Uint,Uint,Uint); 
+
+                                        
+                                        
+                                        
+
+
+
+static void matchposinsinglesequence(Matchprocessinfo *matchprocessinfo,
                                       uint64_t unitnum,
                                       const GtUchar *query,
                                       unsigned long querylen,
                                       const char *querydesc)
 {
   const GtUchar *qptr;
-  unsigned long gmatchlength, remaining;
-  unsigned long witnessposition, *wptr;
+  unsigned long matchlength, remaining;
+  unsigned long subjectpos, *sptr;
 
-  if (substringinfo->preprocessgmatchlength != NULL)
+  if (matchprocessinfo->preprocessmatchfunction != NULL)
   {
-    substringinfo->preprocessgmatchlength(unitnum,
+    matchprocessinfo->preprocessmatchfunction(unitnum,
                                           querylen,
                                           querydesc,
-                                          substringinfo->processinfo);
+                                          matchprocessinfo);
   }
-  if (substringinfo->encseq != NULL)
+  if (matchprocessinfo->encseq != NULL)
   {
-    wptr = &witnessposition;
+    sptr = &subjectpos;
   } 
   		
     
-  if (substringinfo->matchmode == GT_MATCHMODE_MUM) 
+  if (matchprocessinfo->matchmode == GT_MATCHMODE_MUM) 
 	{ 
 		printf ("%s \n", "match mode 'mum' is still in work");
 	}
-	else if (substringinfo->matchmode == GT_MATCHMODE_MUMREFERENCE) 
+	else if (matchprocessinfo->matchmode == GT_MATCHMODE_MUMREFERENCE) 
 	{  
 		for (qptr = query, remaining = querylen; remaining > 0; qptr++, remaining--)
 		{
-			gmatchlength = gt_packedindexmumreference((const BWTSeq *) substringinfo->genericindex,
-																			 substringinfo->encseq,
-																			 substringinfo->alphabet,
-																			 substringinfo->totallength,
-																			 wptr,
-																			 query,
-																			 qptr,
-																			 query+querylen,
+			matchlength = matchprocessinfo->processmatchfunction((const BWTSeq *) matchprocessinfo->genericindex,
+																			 matchprocessinfo->encseq,
+																			 matchprocessinfo->totallength,
+																			 (matchprocessinfo->leastlength).valueunsignedlong,
+																			 sptr,                   // *subjectpos
+																			 query,                  // *query      absolute query start position
+																			 qptr,                   // *qstart     point position in query (qptr will be variable from the point) 
+																			 query+querylen         // *qend       absolute query end position
 																			 //substringinfo->queryreadmode,
-																			 substringinfo->processinfo);
-																		
+																			 );	
+		//printf ("# matchlength=%lu \n", matchlength);
+		if (matchlength >= (matchprocessinfo->leastlength).valueunsignedlong)
+    {
+      matchprocessinfo->postprocessmatchfunction(matchprocessinfo->alphabet,
+                                         query,
+                                         matchlength,
+                                         (unsigned long) (qptr-query),
+                                         querylen,
+                                         subjectpos,
+                                         matchprocessinfo);
+    }																	
 		}
 	}
-	else if (substringinfo->matchmode == GT_MATCHMODE_MAXMATCH) 
+	else if (matchprocessinfo->matchmode == GT_MATCHMODE_MAXMATCH) 
 	{
-		for (qptr = query, remaining = querylen; remaining > 0; qptr++, remaining--)
-		{
-			gmatchlength = gt_packedindexmaxmatch((const BWTSeq *) substringinfo->genericindex,
-																	 substringinfo->encseq,
-																	 substringinfo->alphabet,
-																	 substringinfo->totallength,
-																	 wptr,
-																	 query,
-																	 qptr,
-																	 query+querylen,
-																	 //substringinfo->queryreadmode,
-																	 substringinfo->processinfo);
-		}
+		//for (qptr = query, remaining = querylen; remaining > 0; qptr++, remaining--)
+		//{
+			//gmatchlength = gt_packedindexmaxmatch((const BWTSeq *) substringinfo->genericindex,
+																	 //substringinfo->encseq,
+																	 //substringinfo->alphabet,
+																	 //substringinfo->totallength,
+																	 //sptr,
+																	 //query,
+																	 //qptr,
+																	 //query+querylen,
+																	 ////substringinfo->queryreadmode,
+																	 //substringinfo->processinfo);
+		//}
 	}  
 }
 
 static void showunitnum(GT_UNUSED uint64_t unitnum,
                         unsigned long querylen,
                         const char *querydesc,
-                        GT_UNUSED void *info)  // info is type Rangespecinfo 
+                        void *info)  
 {
-	Rangespecinfo *rangespecinfo = (Rangespecinfo *) info;
+	Matchprocessinfo *matchprocessinfo = (Matchprocessinfo *) info;
   //printf("unit " Formatuint64_t, PRINTuint64_tcast(unitnum));
 	////char *pch = strchr(querydesc,' ');
 	////unsigned long querydesclength = (unsigned long)(pch-querydesc);
@@ -128,9 +178,9 @@ static void showunitnum(GT_UNUSED uint64_t unitnum,
   {
 		////char *buf = gt_calloc(1, sizeof (char) * (querydesclength +1));  
     ////(void) strncpy(buf, querydesc, querydesclength);
-		if (rangespecinfo->showsequencelengths)
+		if (matchprocessinfo->showsequencelengths)
 		{
-			if (rangespecinfo->queryreadmode==GT_READMODE_FORWARD)
+			if (matchprocessinfo->queryreadmode==GT_READMODE_FORWARD)
 		  {
 			  printf("> %s  Len = %lu",querydesc,querylen);
 			}
@@ -150,6 +200,80 @@ static void showunitnum(GT_UNUSED uint64_t unitnum,
 }
 
 
+static void output(const GtAlphabet *alphabet,
+                                const GtUchar *start,
+                                unsigned long gmatchlength,
+                                unsigned long querypos,
+                                unsigned long querylength,
+                                unsigned long subjectpos,
+                                //const char *referencedesc,
+                                //unsigned long referencedesclength,
+                                //GT_UNUSED unsigned long referencelength,
+                                //unsigned long seqtotalnum,
+                                void *info)
+{
+	Matchprocessinfo *matchprocessinfo = (Matchprocessinfo *) info;
+							unsigned long seqnum = gt_encseq_seqnum(matchprocessinfo->encseq, subjectpos);
+							unsigned long seqtotalnum = gt_encseq_num_of_sequences(matchprocessinfo->encseq);
+							subjectpos = subjectpos - gt_encseq_seqstartpos(matchprocessinfo->encseq, seqnum);				    
+
+						  const char *referencedesc;   
+							unsigned long referencedesclength;
+							referencedesc = gt_encseq_description(matchprocessinfo->encseq, &referencedesclength, seqnum);
+							char *pch = strchr(referencedesc,' ');
+							referencedesclength = (unsigned long)(pch-referencedesc);
+							
+							
+	if (referencedesc != NULL && referencedesc[0] != '\0' && seqtotalnum!=1)
+  {
+		char *buf = gt_calloc(1, sizeof (char) * (referencedesclength +1));  
+    (void) strncpy(buf, referencedesc, referencedesclength);
+		//if (rangespecinfo->showsequencelengths)
+		//{
+			//if (rangespecinfo->queryreadmode==GT_READMODE_FORWARD)
+		  //{
+			  //printf("  %s  Len = %lu",buf,referencelength);
+			//}
+			//else
+			//{
+				//printf("  %s  Reverse  Len = %lu",buf,referencelength);
+			//}
+		//} 
+		//else
+		//{
+			printf("  %s",buf);
+		//}    
+    gt_free(buf);
+  }
+
+  //printf("\n");
+	printf("   %8lu  ",subjectpos+1);
+	if (matchprocessinfo->showreversepositions)
+  {	
+		if (matchprocessinfo->queryreadmode==GT_READMODE_REVCOMPL)
+		{
+			printf("%8lu  ",querylength-querypos);
+		}
+		else
+		{
+		  printf("%8lu  ",querypos+1);
+		}
+	} 
+	else
+	{
+		printf("%8lu  ",querypos+1);
+	}
+  printf("%8lu\n",gmatchlength);
+  //(void) putchar('\n');
+  if (matchprocessinfo->showstring)
+  {
+		gt_alphabet_decode_seq_to_fp(alphabet,stdout,start + querypos,
+																 gmatchlength);
+	  (void) putchar('\n');															 
+	}
+}
+
+
 int gt_findmum(const GtEncseq *encseq,
                               const void *genericindex,
                               unsigned long totallength,
@@ -166,8 +290,8 @@ int gt_findmum(const GtEncseq *encseq,
                               GT_UNUSED bool verbose,                  
                               GtError *err)
 {
-  Substringinfo substringinfo;
-  Rangespecinfo rangespecinfo;
+  Matchprocessinfo matchprocessinfo;
+  //Rangespecinfo rangespecinfo;
   bool haserr = false;
   GtSeqIterator *seqit;
   const GtUchar *query;
@@ -177,22 +301,29 @@ int gt_findmum(const GtEncseq *encseq,
   uint64_t unitnum;
 
   gt_error_check(err);
-  substringinfo.genericindex = genericindex;
-  substringinfo.totallength = totallength;
-  substringinfo.matchmode = matchmode;
-  rangespecinfo.leastlength = leastlength;
-  rangespecinfo.nucleotidesonly = nucleotidesonly;                  
+  matchprocessinfo.genericindex = genericindex;
+  matchprocessinfo.totallength = totallength;
+  matchprocessinfo.matchmode = matchmode;
+  matchprocessinfo.preprocessmatchfunction = showunitnum;
+  matchprocessinfo.processmatchfunction = gt_packedindexmumreference;
+  matchprocessinfo.postprocessmatchfunction = output;
+  
+  matchprocessinfo.alphabet = alphabet;
+  //matchprocessinfo.processinfo = &rangespecinfo;
+  matchprocessinfo.encseq = encseq;
+  
+  
+////  GtArray *mumcandtab = gt_array_new(sizeof (MUMcandidate));
+////  rangespecinfo.mumcandtab = mumcandtab;
+  matchprocessinfo.leastlength = leastlength;
+  matchprocessinfo.nucleotidesonly = nucleotidesonly;                  
   //rangespecinfo.bothdirections = bothdirections;                  
   //rangespecinfo.reversecomplement = reversecomplement;                   
-  rangespecinfo.showstring = showstring;                         
-  rangespecinfo.showreversepositions = showreversepositions;                   
-  rangespecinfo.showsequencelengths = showsequencelengths;
+  matchprocessinfo.showstring = showstring;                         
+  matchprocessinfo.showreversepositions = showreversepositions;                   
+  matchprocessinfo.showsequencelengths = showsequencelengths;
   // fill the original model of 3 functions, it actually misses 2 functions, the other 2 are processgmatchlength, postprocessgmatchlength
-  substringinfo.preprocessgmatchlength = showunitnum;
-  
-  substringinfo.alphabet = alphabet;
-  substringinfo.processinfo = &rangespecinfo;
-  substringinfo.encseq = encseq;
+
   
   // analyse the queryfilenames with seqiterator
   seqit = gt_seqiterator_sequence_buffer_new(queryfilenames, err);
@@ -221,8 +352,8 @@ int gt_findmum(const GtEncseq *encseq,
 
 			if ( !reversecomplement ) 
 			{ 
-				rangespecinfo.queryreadmode = GT_READMODE_FORWARD;
-				matchposinsinglesequence(&substringinfo,
+				matchprocessinfo.queryreadmode = GT_READMODE_FORWARD;
+				matchposinsinglesequence(&matchprocessinfo,
 													unitnum,
 													query,
 													querylen,
@@ -248,8 +379,8 @@ int gt_findmum(const GtEncseq *encseq,
         gt_alphabet_encode_seq(alphabet, revcompquery, temp_char, querylen);
 
         gt_free(temp_char);
-        rangespecinfo.queryreadmode = GT_READMODE_REVCOMPL;
-				matchposinsinglesequence(&substringinfo,
+        matchprocessinfo.queryreadmode = GT_READMODE_REVCOMPL;
+				matchposinsinglesequence(&matchprocessinfo,
 													unitnum,
 													revcompquery,
 													querylen,
@@ -261,7 +392,9 @@ int gt_findmum(const GtEncseq *encseq,
       FREESPACE(querydesc);
     }
     gt_seqiterator_delete(seqit);
+////    gt_array_reset(mumcandtab);
   }
+////  gt_array_delete(mumcandtab);
   return haserr ? -1 : 0;
 }
 
