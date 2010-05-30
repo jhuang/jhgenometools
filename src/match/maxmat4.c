@@ -39,23 +39,26 @@ typedef void (*Preprocessmatchfunction)(uint64_t,
                                        unsigned long querylen,
                                        const char *,
                                        void *);
-typedef unsigned long (*Processmatchfunction)(const BWTSeq *,
+typedef bool (*Processmatchfunction)(const BWTSeq *,
                                 const GtEncseq *,
                                 unsigned long,
                                 unsigned long,
-                                       unsigned long *,  
+                                       //unsigned long *,  
                                        const GtUchar *,   
                                        const GtUchar *,   
-                                       const GtUchar *    
-                                       );
+                                       const GtUchar *,    
+                                       GtArray *);
 typedef void (*Postprocessmatchfunction)(const GtAlphabet *,
                                 const GtUchar *,
+                                //unsigned long,
                                 unsigned long,
                                 unsigned long,
-                                unsigned long,
-                                unsigned long,
+                                //unsigned long,
                                 void *);
                                 
+   
+
+
                                 
 typedef struct
 {
@@ -69,7 +72,8 @@ typedef struct
   //void *processinfo;
   const GtEncseq *encseq;
   
-  //GtArray mumcandtab;
+  GtArray *mumcandtab;
+  GtArray *maximalmatchtab;
   bool nucleotidesonly,                                      
        showstring,                           
        showreversepositions,                     
@@ -100,8 +104,9 @@ static void matchposinsinglesequence(Matchprocessinfo *matchprocessinfo,
                                       const char *querydesc)
 {
   const GtUchar *qptr;
-  unsigned long matchlength, remaining;
+  unsigned long remaining;
   unsigned long subjectpos, *sptr;
+  bool hasmatch;
 
   if (matchprocessinfo->preprocessmatchfunction != NULL)
   {
@@ -120,49 +125,34 @@ static void matchposinsinglesequence(Matchprocessinfo *matchprocessinfo,
 	{ 
 		printf ("%s \n", "match mode 'mum' is still in work");
 	}
-	else if (matchprocessinfo->matchmode == GT_MATCHMODE_MUMREFERENCE) 
+	else if ( (matchprocessinfo->matchmode == GT_MATCHMODE_MUMREFERENCE) || (matchprocessinfo->matchmode == GT_MATCHMODE_MAXMATCH) ) 
 	{  
 		for (qptr = query, remaining = querylen; remaining > 0; qptr++, remaining--)
 		{
-			matchlength = matchprocessinfo->processmatchfunction((const BWTSeq *) matchprocessinfo->genericindex,
+			hasmatch = matchprocessinfo->processmatchfunction((const BWTSeq *) matchprocessinfo->genericindex,
 																			 matchprocessinfo->encseq,
 																			 matchprocessinfo->totallength,
 																			 (matchprocessinfo->leastlength).valueunsignedlong,
-																			 sptr,                   // *subjectpos
+																			 //sptr,                   // *subjectpos
 																			 query,                  // *query      absolute query start position
 																			 qptr,                   // *qstart     point position in query (qptr will be variable from the point) 
-																			 query+querylen         // *qend       absolute query end position
-																			 //substringinfo->queryreadmode,
+																			 query+querylen,         // *qend       absolute query end position
+																			 matchprocessinfo->maximalmatchtab
 																			 );	
 		//printf ("# matchlength=%lu \n", matchlength);
-		if (matchlength >= (matchprocessinfo->leastlength).valueunsignedlong)
-    {
-      matchprocessinfo->postprocessmatchfunction(matchprocessinfo->alphabet,
-                                         query,
-                                         matchlength,
-                                         (unsigned long) (qptr-query),
-                                         querylen,
-                                         subjectpos,
-                                         matchprocessinfo);
-    }																	
+		//if (matchlength >= (matchprocessinfo->leastlength).valueunsignedlong)
+			if ( hasmatch )		
+			{
+				matchprocessinfo->postprocessmatchfunction(matchprocessinfo->alphabet,
+																					 query,
+																					 //matchlength,
+																					 (unsigned long) (qptr-query),
+																					 querylen,
+																					 //subjectpos,
+																					 matchprocessinfo);
+			}																	
 		}
-	}
-	else if (matchprocessinfo->matchmode == GT_MATCHMODE_MAXMATCH) 
-	{
-		//for (qptr = query, remaining = querylen; remaining > 0; qptr++, remaining--)
-		//{
-			//gmatchlength = gt_packedindexmaxmatch((const BWTSeq *) substringinfo->genericindex,
-																	 //substringinfo->encseq,
-																	 //substringinfo->alphabet,
-																	 //substringinfo->totallength,
-																	 //sptr,
-																	 //query,
-																	 //qptr,
-																	 //query+querylen,
-																	 ////substringinfo->queryreadmode,
-																	 //substringinfo->processinfo);
-		//}
-	}  
+	} 
 }
 
 static void showunitnum(GT_UNUSED uint64_t unitnum,
@@ -202,74 +192,63 @@ static void showunitnum(GT_UNUSED uint64_t unitnum,
 
 static void output(const GtAlphabet *alphabet,
                                 const GtUchar *start,
-                                unsigned long gmatchlength,
+                                //unsigned long matchlength,
                                 unsigned long querypos,
                                 unsigned long querylength,
-                                unsigned long subjectpos,
-                                //const char *referencedesc,
-                                //unsigned long referencedesclength,
-                                //GT_UNUSED unsigned long referencelength,
-                                //unsigned long seqtotalnum,
+                                //unsigned long subjectpos,
                                 void *info)
 {
 	Matchprocessinfo *matchprocessinfo = (Matchprocessinfo *) info;
-							unsigned long seqnum = gt_encseq_seqnum(matchprocessinfo->encseq, subjectpos);
-							unsigned long seqtotalnum = gt_encseq_num_of_sequences(matchprocessinfo->encseq);
-							subjectpos = subjectpos - gt_encseq_seqstartpos(matchprocessinfo->encseq, seqnum);				    
+  //int i;						
+	//for (i = 0; i < gt_array_size(matchprocessinfo->maximalmatchtab); i++) {
+	while (gt_array_size(matchprocessinfo->maximalmatchtab)!=0) {
+		//unsigned long matchlength = ((Maximalmatch *)gt_array_get(matchprocessinfo->maximalmatchtab, i))->matchlength;
+		//unsigned long subjectpos = ((Maximalmatch *)gt_array_get(matchprocessinfo->maximalmatchtab, i))->dbstart;  // 名字不统一 dbstart另一个是subjectpos
+		Maximalmatch *mm = (Maximalmatch *)gt_array_pop(matchprocessinfo->maximalmatchtab);
+		unsigned long matchlength = mm->matchlength;
+		unsigned long subjectpos = mm->dbstart;
+		
+		unsigned long seqnum = gt_encseq_seqnum(matchprocessinfo->encseq, subjectpos);
+		subjectpos = subjectpos - gt_encseq_seqstartpos(matchprocessinfo->encseq, seqnum);
+		unsigned long seqtotalnum = gt_encseq_num_of_sequences(matchprocessinfo->encseq);			    
 
-						  const char *referencedesc;   
-							unsigned long referencedesclength;
-							referencedesc = gt_encseq_description(matchprocessinfo->encseq, &referencedesclength, seqnum);
-							char *pch = strchr(referencedesc,' ');
-							referencedesclength = (unsigned long)(pch-referencedesc);
+		const char *referencedesc;   
+		unsigned long referencedesclength;
+		referencedesc = gt_encseq_description(matchprocessinfo->encseq, &referencedesclength, seqnum);
+		char *pch = strchr(referencedesc,' ');
+		referencedesclength = (unsigned long)(pch-referencedesc);
 							
-							
-	if (referencedesc != NULL && referencedesc[0] != '\0' && seqtotalnum!=1)
-  {
-		char *buf = gt_calloc(1, sizeof (char) * (referencedesclength +1));  
-    (void) strncpy(buf, referencedesc, referencedesclength);
-		//if (rangespecinfo->showsequencelengths)
-		//{
-			//if (rangespecinfo->queryreadmode==GT_READMODE_FORWARD)
-		  //{
-			  //printf("  %s  Len = %lu",buf,referencelength);
-			//}
-			//else
-			//{
-				//printf("  %s  Reverse  Len = %lu",buf,referencelength);
-			//}
-		//} 
-		//else
-		//{
-			printf("  %s",buf);
-		//}    
-    gt_free(buf);
-  }
-
-  //printf("\n");
-	printf("   %8lu  ",subjectpos+1);
-	if (matchprocessinfo->showreversepositions)
-  {	
-		if (matchprocessinfo->queryreadmode==GT_READMODE_REVCOMPL)
+		if (referencedesc != NULL && referencedesc[0] != '\0' && seqtotalnum!=1)
 		{
-			printf("%8lu  ",querylength-querypos);
+			char *buf = gt_calloc(1, sizeof (char) * (referencedesclength +1));  
+			(void) strncpy(buf, referencedesc, referencedesclength);
+			printf("  %s",buf);   
+			gt_free(buf);
 		}
+
+		printf("   %8lu  ",subjectpos+1);
+		if (matchprocessinfo->showreversepositions)
+		{	
+			if (matchprocessinfo->queryreadmode==GT_READMODE_REVCOMPL)
+			{
+				printf("%8lu  ",querylength-querypos);
+			}
+			else
+			{
+				printf("%8lu  ",querypos+1);
+			}
+		} 
 		else
 		{
-		  printf("%8lu  ",querypos+1);
+			printf("%8lu  ",querypos+1);
 		}
-	} 
-	else
-	{
-		printf("%8lu  ",querypos+1);
-	}
-  printf("%8lu\n",gmatchlength);
-  //(void) putchar('\n');
-  if (matchprocessinfo->showstring)
-  {
-		gt_alphabet_decode_seq_to_fp(alphabet,stdout,start + querypos,
-																 gmatchlength);
-	  (void) putchar('\n');															 
+		printf("%8lu\n",matchlength);
+		if (matchprocessinfo->showstring)
+		{
+			gt_alphabet_decode_seq_to_fp(alphabet,stdout,start + querypos,
+																	 matchlength);
+			(void) putchar('\n');															 
+		}
 	}
 }
 
@@ -305,16 +284,29 @@ int gt_findmum(const GtEncseq *encseq,
   matchprocessinfo.totallength = totallength;
   matchprocessinfo.matchmode = matchmode;
   matchprocessinfo.preprocessmatchfunction = showunitnum;
-  matchprocessinfo.processmatchfunction = gt_packedindexmumreference;
+  if (matchprocessinfo.matchmode == GT_MATCHMODE_MUM) 
+	{ 
+      //matchprocessinfo.processmatchfunction = gt_packedindexmum;
+	}
+	else if (matchprocessinfo.matchmode == GT_MATCHMODE_MUMREFERENCE) 
+	{
+		  matchprocessinfo.processmatchfunction = gt_packedindexmumreference;
+	}  
+	else if (matchprocessinfo.matchmode == GT_MATCHMODE_MAXMATCH) 
+	{
+		  matchprocessinfo.processmatchfunction = gt_packedindexmaxmatch;
+  }
   matchprocessinfo.postprocessmatchfunction = output;
   
   matchprocessinfo.alphabet = alphabet;
   //matchprocessinfo.processinfo = &rangespecinfo;
   matchprocessinfo.encseq = encseq;
   
-  
-////  GtArray *mumcandtab = gt_array_new(sizeof (MUMcandidate));
-////  rangespecinfo.mumcandtab = mumcandtab;
+
+  GtArray *mumcandtab = gt_array_new(sizeof (MUMcandidate));
+  GtArray *maximalmatchtab = gt_array_new(sizeof (Maximalmatch));
+  matchprocessinfo.mumcandtab = mumcandtab;
+  matchprocessinfo.maximalmatchtab = maximalmatchtab;
   matchprocessinfo.leastlength = leastlength;
   matchprocessinfo.nucleotidesonly = nucleotidesonly;                  
   //rangespecinfo.bothdirections = bothdirections;                  
@@ -392,9 +384,11 @@ int gt_findmum(const GtEncseq *encseq,
       FREESPACE(querydesc);
     }
     gt_seqiterator_delete(seqit);
-////    gt_array_reset(mumcandtab);
+    //gt_array_reset(mumcandtab);
+    gt_array_reset(maximalmatchtab);
   }
-////  gt_array_delete(mumcandtab);
+  gt_array_delete(mumcandtab);
+  gt_array_delete(maximalmatchtab);
   return haserr ? -1 : 0;
 }
 

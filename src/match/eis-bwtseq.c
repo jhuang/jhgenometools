@@ -383,17 +383,16 @@ getMatchBound(const BWTSeq *bwtSeq, const Symbol *query, size_t queryLen,
 
 
 // for mumreference
-unsigned long gt_packedindexmumreference(const BWTSeq *bwtSeq,
+bool gt_packedindexmumreference(const BWTSeq *bwtSeq,
                                 const GtEncseq *encseq,
                                 unsigned long totallength,
                                 unsigned long leastlength,
-                                       unsigned long *subjectpos,  // subject position
                                        const GtUchar *query,    // absolute query start position
                                        const GtUchar *qstart,   // point position in query (qptr will be variable from the point) 
-                                       const GtUchar *qend     // absolute query end position
-                                       //const GtReadmode qreadmode
+                                       const GtUchar *qend,     // absolute query end position
+                                       GtArray *maximalmatchtab
                                        )              
-{
+{	
   GtUchar cc;
   GtUchar dbleftchar, dbrightchar;
   const GtUchar *qptr;
@@ -401,6 +400,7 @@ unsigned long gt_packedindexmumreference(const BWTSeq *bwtSeq,
   struct GtUlongPair seqpospair;
   Symbol curSym;
   unsigned long matchlength = 0;
+  unsigned long subjectpos = 0;
   const MRAEnc *alphabet;
   //Rangespecinfo *rangespecinfo = (Rangespecinfo *) info;
   //unsigned long leastlength = (rangespecinfo->leastlength).valueunsignedlong;
@@ -443,18 +443,18 @@ unsigned long gt_packedindexmumreference(const BWTSeq *bwtSeq,
     if ( (matchlength >= leastlength) && (bwtbound.start+1 == bwtbound.end) )
     {
 
-						*subjectpos = gt_voidpackedfindfirstmatchconvert((const FMindex *)bwtSeq,
+						subjectpos = gt_voidpackedfindfirstmatchconvert((const FMindex *)bwtSeq,
                                                        bwtbound.start,
                                                        matchlength);
-            ////printf("# *subjectpos=%lu\n",*subjectpos);
+            ////printf("# subjectpos=%lu\n",subjectpos);
             
 						// check the left maximal        
             bool isleftmaximal = false;					
-						if (*subjectpos==0 || qstart==query ) {
+						if (subjectpos==0 || qstart==query ) {
 							isleftmaximal = true;
 						} else {
 							dbleftchar = gt_encseq_get_encoded_char(encseq, 
-																				*subjectpos-1,
+																				subjectpos-1,
 																				GT_READMODE_FORWARD);  // probably is REVERSE
 							////printf("# dbleftchar=%u\n",dbleftchar);
 							////printf("# *(qstart-1)=%u\n",*(qstart-1));
@@ -471,7 +471,7 @@ unsigned long gt_packedindexmumreference(const BWTSeq *bwtSeq,
               // check the right maximal	
               bool isrightmaximal = false;
 						  do {
-								if (*subjectpos+matchlength==totallength || qptr+1==qend ) {
+								if (subjectpos+matchlength==totallength || qptr+1==qend ) {
 									// if it reaches end of the reference or query sequence -> output
 									////printf ("%s \n", "it reaches end of the query or reference sequence");
 									isrightmaximal = true;
@@ -480,7 +480,7 @@ unsigned long gt_packedindexmumreference(const BWTSeq *bwtSeq,
 								else
 								{
 									dbrightchar = gt_encseq_get_encoded_char(encseq, 
-																						*subjectpos+matchlength,
+																						subjectpos+matchlength,
 																						GT_READMODE_FORWARD);												
 									////printf("# dbrightchar=%u\n",dbrightchar);
 							    ////printf("# *(qptr+1)=%u\n",*(qptr+1));								
@@ -497,7 +497,17 @@ unsigned long gt_packedindexmumreference(const BWTSeq *bwtSeq,
 
 							//FREESPACE(referencedesc);	
 							//break;	
-							return matchlength;    // break process
+
+//		        	r.start = i + 1;
+//							range.end   = i + 101;
+//							gt_array_add(a, range);
+							Maximalmatch maximalmatch;
+              maximalmatch.matchlength = matchlength;
+              maximalmatch.dbstart = subjectpos;
+              gt_array_add(maximalmatchtab, maximalmatch);
+							
+
+							return true;    // break process
 					  }	
 
     }
@@ -507,155 +517,155 @@ unsigned long gt_packedindexmumreference(const BWTSeq *bwtSeq,
     //continue;
   }
 
-  return 0;
+  return false;
 }
   
   
   
   
-//unsigned long gt_packedindexmaxmatch(const BWTSeq *bwtSeq,
-                                //const GtEncseq *encseq,
-                                //const GtAlphabet *gtalphabet,
-                                //unsigned long totallength,
-                                       //unsigned long *subjectpos,  // subject position
-                                       //const GtUchar *query,    // absolute query start position
-                                       //const GtUchar *qstart,   // point position in query (qptr will be variable from the point) 
-                                       //const GtUchar *qend,     // absolute query end position
-                                       ////const GtReadmode qreadmode,
-                                       //void *info)              // Rangespecinfo
-//{
-  //GtUchar cc;
-  //GtUchar dbleftchar, dbrightchar;
-  //const GtUchar *qptr;
-  //struct matchBound bwtbound;
-  //struct GtUlongPair seqpospair;
-  //Symbol curSym;
-  //unsigned long matchlength = 0;
-  //const MRAEnc *alphabet;
-  //unsigned long bwtboundi;
-  //Rangespecinfo *rangespecinfo = (Rangespecinfo *) info;
+bool gt_packedindexmaxmatch(const BWTSeq *bwtSeq,
+                                const GtEncseq *encseq,
+                                unsigned long totallength,
+                                unsigned long leastlength,
+                                       const GtUchar *query,    // absolute query start position
+                                       const GtUchar *qstart,   // point position in query (qptr will be variable from the point) 
+                                       const GtUchar *qend,     // absolute query end position
+                                       GtArray *maximalmatchtab)           
+{	
+  GtUchar cc;
+  GtUchar dbleftchar, dbrightchar;
+  const GtUchar *qptr;
+  struct matchBound bwtbound;
+  struct GtUlongPair seqpospair;
+  Symbol curSym;
+  unsigned long matchlength = 0;
+  unsigned long subjectpos = 0;
+  const MRAEnc *alphabet;
+  unsigned long bwtboundi;
   //unsigned long leastlength = (rangespecinfo->leastlength).valueunsignedlong;
 
-  //gt_assert(bwtSeq && qstart);
-  //alphabet = BWTSeqGetAlphabet(bwtSeq);
-  //qptr = qstart;
+  gt_assert(bwtSeq && qstart);
+  alphabet = BWTSeqGetAlphabet(bwtSeq);
+  qptr = qstart;
   
   
   
-  //cc = *qptr;
-  //if (ISSPECIAL(cc))
-  //{
-    //return 0;
-  //}
-  //curSym = MRAEncMapSymbol(alphabet, cc);
-  //bwtbound.start = bwtSeq->count[curSym];
-  //bwtbound.end = bwtSeq->count[curSym+1];
+  cc = *qptr;
+  if (ISSPECIAL(cc))
+  {
+    return 0;
+  }
+  curSym = MRAEncMapSymbol(alphabet, cc);
+  bwtbound.start = bwtSeq->count[curSym];
+  bwtbound.end = bwtSeq->count[curSym+1];
    
-	//matchlength = (unsigned long) (qptr - qstart + 1);        
-  //qptr++;     
+	matchlength = (unsigned long) (qptr - qstart + 1);        
+  qptr++;     
                                                        
-  //while (qptr < qend && bwtbound.start < bwtbound.end)
-  //{
-    //cc = *qptr;
-    ////printf("# cc=%u\n",cc);
-    //if (ISSPECIAL (cc))
-    //{
-      //return 0;
-    //}
-    //curSym = MRAEncMapSymbol(alphabet, cc);
-    //seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
-                                             //bwtbound.start,bwtbound.end);
-    //bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
-    //bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;
+  while (qptr < qend && bwtbound.start < bwtbound.end)
+  {
+    cc = *qptr;
+    //printf("# cc=%u\n",cc);
+    if (ISSPECIAL (cc))
+    {
+      return 0;
+    }
+    curSym = MRAEncMapSymbol(alphabet, cc);
+    seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
+                                             bwtbound.start,bwtbound.end);
+    bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
+    bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;
       
      
-    //matchlength = (unsigned long) (qptr - qstart + 1);
+    matchlength = (unsigned long) (qptr - qstart + 1);
 
-    //if (matchlength == leastlength)
-    //{
-			//for (bwtboundi=bwtbound.start; bwtboundi < bwtbound.end; bwtboundi++) 
-			//{ 
-						//*subjectpos = gt_voidpackedfindfirstmatchconvert((const FMindex *)bwtSeq,
-                                                       //bwtboundi,
-                                                       //matchlength);
+    if (matchlength == leastlength)
+    {
+			for (bwtboundi=bwtbound.start; bwtboundi < bwtbound.end; bwtboundi++) 
+			{ 
+						subjectpos = gt_voidpackedfindfirstmatchconvert((const FMindex *)bwtSeq,
+                                                       bwtboundi,
+                                                       matchlength);
          					
-						//// check the left maximal
-						//bool isleftmaximal = false;
-						//if (*subjectpos==0 || qstart==query ) {
-							//isleftmaximal = true;
-						//} else {
-							//dbleftchar = gt_encseq_get_encoded_char(encseq, 
-																				//*subjectpos-1,
-																				//GT_READMODE_FORWARD);
-							//////printf("# dbleftchar=%u\n",dbleftchar);
-							//////printf("# *(qstart-1)=%u\n",*(qstart-1));
-							//if (ISSPECIAL(dbleftchar) || dbleftchar != *(qstart-1) ) {
-								//isleftmaximal = true;
-							//}	else {
-								//isleftmaximal = false;
-							//}
-					  //}		
+						// check the left maximal
+						bool isleftmaximal = false;
+						if (subjectpos==0 || qstart==query ) {
+							isleftmaximal = true;
+						} else {
+							dbleftchar = gt_encseq_get_encoded_char(encseq, 
+																				subjectpos-1,
+																				GT_READMODE_FORWARD);
+							////printf("# dbleftchar=%u\n",dbleftchar);
+							////printf("# *(qstart-1)=%u\n",*(qstart-1));
+							if (ISSPECIAL(dbleftchar) || dbleftchar != *(qstart-1) ) {
+								isleftmaximal = true;
+							}	else {
+								isleftmaximal = false;
+							}
+					  }		
 																													
-						//if (isleftmaximal) {			
-							//// every line moves forwards			
-              //unsigned long matchlengthi = matchlength;
-              //const GtUchar *qptri = qptr;
+						if (isleftmaximal) {			
+							// every line moves forwards			
+              unsigned long matchlengthi = matchlength;
+              const GtUchar *qptri = qptr;
               
-  						//// check the right maximal		            
-              //bool isrightmaximal = false;
-						  //do {
-								//if (*subjectpos+matchlengthi==totallength || qptri+1==qend ) {
-									//// if it reaches end of the query or reference sequence -> output
-									//// printf ("%s \n", "it reaches end of the query or reference sequence");
-									//isrightmaximal = true;							
-								//}
-								//else
-								//{
-									//dbrightchar = gt_encseq_get_encoded_char(encseq, 
-																						//*subjectpos+matchlengthi,
-																						//GT_READMODE_FORWARD);											
+  						// check the right maximal		            
+              bool isrightmaximal = false;
+						  do {
+								if (subjectpos+matchlengthi==totallength || qptri+1==qend ) {
+									// if it reaches end of the query or reference sequence -> output
+									// printf ("%s \n", "it reaches end of the query or reference sequence");
+									isrightmaximal = true;							
+								}
+								else
+								{
+									dbrightchar = gt_encseq_get_encoded_char(encseq, 
+																						subjectpos+matchlengthi,
+																						GT_READMODE_FORWARD);											
 									
-									//if ( (dbrightchar != *(qptri+1)) || ISSPECIAL(dbrightchar) ) {
-										//isrightmaximal = true;
-									//} else {
-										//// if it is not right maximal -> extension
-										//isrightmaximal = false;
-										//qptri++;
-										//matchlengthi++;
-									//}									
-								//}
-						  //} while (!isrightmaximal);	
-						  //// from absolute position to relative position
-						  //unsigned long seqnum = gt_encseq_seqnum(encseq, *subjectpos);
-						  //unsigned long seqtotalnum = gt_encseq_num_of_sequences(encseq);
-						  //*subjectpos = *subjectpos - gt_encseq_seqstartpos(encseq, seqnum);
-						       
-						  //const char *referencedesc;
-							//unsigned long referencedesclength;
-							//referencedesc = gt_encseq_description(encseq, &referencedesclength, seqnum);
-							//char *pch = strchr(referencedesc,' ');
-							//referencedesclength = (unsigned long)(pch-referencedesc);
+									if ( (dbrightchar != *(qptri+1)) || ISSPECIAL(dbrightchar) ) {
+										isrightmaximal = true;
+									} else {
+										// if it is not right maximal -> extension
+										isrightmaximal = false;
+										qptri++;
+										matchlengthi++;
+									}									
+								}
+						  } while (!isrightmaximal);	
+	
+							Maximalmatch maximalmatch;
+              maximalmatch.matchlength = matchlengthi;
+              maximalmatch.dbstart = subjectpos;
+              gt_array_add(maximalmatchtab, maximalmatch);
+              						
+
 							
+							
+
+              
 							//output(gtalphabet, query, matchlengthi,
 												 //(unsigned long) (qstart-query), 
 												 //(unsigned long) (qend-query),      
 												 //*subjectpos, referencedesc, referencedesclength,gt_encseq_seqlength(encseq,seqnum),seqtotalnum,
 												 //rangespecinfo);
-							////FREESPACE(referencedesc);					 
-							////return matchlengthi; 
-					  //}
-		  //}
-		  ////break;
-		  //return matchlength;	
+							//FREESPACE(referencedesc);					 
+							//return matchlengthi; 
+					  }
+		  }
+		  //break;
+		  //return matchlength;
+		  return true;	
 
-    //}
+    }
 
-    //// together forwards
-    //qptr++;    
-  //}
+    // together forwards
+    qptr++;    
+  }
 
   //return matchlength;
-//}
+  return false;
+}
 
 
 

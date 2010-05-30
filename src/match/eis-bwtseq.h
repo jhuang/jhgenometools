@@ -35,6 +35,7 @@
 #include "core/encseq.h"
 #include "match/matchmode_api.h"
 #include "core/defined-types.h"
+//#include <stdbool.h>
 
 /* TODO:
  * - implement other index types
@@ -506,11 +507,20 @@ gt_EMINumMatchesLeft(const BWTSeqExactMatchesIterator *iter);
 
 typedef struct
 {
+  unsigned long matchlength,    // length of the mum
+       dbstart;     // start position in the subject-sequence     
+} Maximalmatch; 
+
+
+typedef struct
+{
   unsigned long mumlength,    // length of the mum
        dbstart,      // start position in the subject-sequence
        queryseq,     // number of the query sequence
        querystart;   // start position in the query sequence      
-} MUMcandidate;    
+} MUMcandidate; 
+
+
 
 
 //typedef struct Rangespecinfo Rangespecinfo;
@@ -527,27 +537,26 @@ typedef struct
   //GtReadmode queryreadmode;
 //} Rangespecinfo;
 
-unsigned long gt_packedindexmumreference(const BWTSeq *bwtSeq,
+bool gt_packedindexmumreference(const BWTSeq *bwtSeq,
                                 const GtEncseq *encseq,
                                 unsigned long totallength,
                                 unsigned long leastlength,
-                                       unsigned long *subjectpos,  // subject position
-                                       const GtUchar *query,    // absolute query start position
-                                       const GtUchar *qstart,   // point position in query (qptr will be variable from the point) 
-                                       const GtUchar *qend     // absolute query end position
-                                       //const GtReadmode qreadmode
-                                       );   
-                                       
-unsigned long gt_packedindexmaxmatch(const BWTSeq *bwtSeq,
-                                const GtEncseq *encseq,
-                                const GtAlphabet *gtalphabet,
-                                unsigned long totallength,
-                                       unsigned long *subjectpos,  // subject position
                                        const GtUchar *query,    // absolute query start position
                                        const GtUchar *qstart,   // point position in query (qptr will be variable from the point) 
                                        const GtUchar *qend,     // absolute query end position
-                                       //const GtReadmode qreadmode,
-                                       void *info);             // Rangespecinfo
+                                       GtArray *maximalmatchtab
+                                       );
+                                       
+bool gt_packedindexmaxmatch(const BWTSeq *bwtSeq,
+                                const GtEncseq *encseq,
+                                unsigned long totallength,
+                                unsigned long leastlength,
+                                       const GtUchar *query,    // absolute query start position
+                                       const GtUchar *qstart,   // point position in query (qptr will be variable from the point) 
+                                       const GtUchar *qend,     // absolute query end position
+                                       GtArray *maximalmatchtab);
+                                           
+                                                 
                                        
 /**
  * @brief for packed index (given as void pointer), compute the longest
