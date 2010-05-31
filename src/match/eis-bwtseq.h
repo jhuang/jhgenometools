@@ -515,9 +515,9 @@ typedef struct
 typedef struct
 {
   unsigned long mumlength,    // length of the mum
-       dbstart,      // start position in the subject-sequence
-       queryseq,     // number of the query sequence
-       querystart;   // start position in the query sequence      
+       dbstart;      // start position in the subject-sequence
+       //queryseq,     // number of the query sequence
+  const GtUchar *querystart;   // start position in the query sequence      
 } MUMcandidate; 
 
 
