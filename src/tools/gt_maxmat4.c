@@ -239,7 +239,7 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
 		packedindex = gt_loadvoidBWTSeqForSA(gt_str_get(referencefile),
 											&suffixarray,
 											totallength,
-											false,
+											false,               // bool withpckbt,
 											err);
 		if (packedindex == NULL)
 		{

@@ -40,27 +40,26 @@ typedef void (*Preprocessmatchfunction)(uint64_t,
                                        const char *,
                                        void *);
 typedef bool (*Processmatchfunction)(const BWTSeq *,
-                                const GtEncseq *,
-                                unsigned long,
-                                unsigned long,
-                                       //unsigned long *,  
-                                       const GtUchar *,   
-                                       const GtUchar *,   
-                                       const GtUchar *,    
-                                       GtArray *);
+                                     const GtEncseq *,
+																		 unsigned long,
+																		 unsigned long,
+																		 const GtUchar *,   
+																		 const GtUchar *,   
+																		 const GtUchar *,    
+																		 GtArray *);
                                 
 typedef void (*Postprocessmatchfunction)(void *,
                                       const GtUchar *,
                                       unsigned long);
 
 typedef void (*Showmatchfunction)(const GtEncseq *encseq,
-                                const GtAlphabet *,
-                                const GtUchar *,
-                                unsigned long,
-                                unsigned long,
-                                unsigned long,
-                                unsigned long,
-                                void *);
+                                  const GtAlphabet *,
+                                  const GtUchar *,
+                                  unsigned long,
+                                  unsigned long,
+                                  unsigned long,
+                                  unsigned long,
+                                  void *);
                                 
    
 
@@ -83,7 +82,6 @@ typedef struct
   Processmatchfunction processmatchfunction;
   Postprocessmatchfunction postprocessmatchfunction;
   Showmatchfunction showmatchfunction;
-  //void *processinfo;
   const GtEncseq *encseq;
   
   GtArray *mumcandtab;
@@ -97,31 +95,18 @@ typedef struct
                                         
 /*
 	The following function compares two MUM-candidates. The MUM-candidate
-	with smaller dbstart-value comes first.
-	If both MUMs have the same dbstart-value, then the MUM-candidate
+	with smaller subjectpos-value comes first.
+	If both MUMs have the same subjectpos-value, then the MUM-candidate
 	with the larger length comes first.
 */
 static int compareMUMcandidates(MUMcandidate *p,MUMcandidate *q)
 {
-	if(p->dbstart == q->dbstart)
+	if(p->subjectpos == q->subjectpos)
 	{
 		return (p->mumlength < q->mumlength) ? 1 : -1;
 	}
-	return (p->dbstart > q->dbstart) ? 1 : -1;
+	return (p->subjectpos > q->subjectpos) ? 1 : -1;
 }
-//int gt_range_compare(const GtRange *range_a, const GtRange *range_b)
-//{
-  //gt_assert(range_a->start <= range_a->end && range_b->start <= range_b->end);
-
-  //if ((range_a->start == range_b->start) && (range_a->end == range_b->end))
-    //return 0; /* range_a == range_b */
-
-  //if ((range_a->start < range_b->start) ||
-      //((range_a->start == range_b->start) && (range_a->end < range_b->end)))
-    //return -1; /* range_a < range_b */
-
-  //return 1; /* range_a > range_b */
-//}
 
 
 static void matchposinsinglesequence(Matchprocessinfo *matchprocessinfo,
@@ -148,95 +133,62 @@ static void matchposinsinglesequence(Matchprocessinfo *matchprocessinfo,
   } 
   		
     
-  //if (matchprocessinfo->matchmode == GT_MATCHMODE_MUM) 
-	//{ 
-		//for (qptr = query, remaining = querylen; remaining > 0; qptr++, remaining--)
-		//{
-			//hasmatch = matchprocessinfo->processmatchfunction((const BWTSeq *) matchprocessinfo->genericindex,
-																			 //matchprocessinfo->encseq,
-																			 //matchprocessinfo->totallength,
-																			 //(matchprocessinfo->leastlength).valueunsignedlong,
-																			 //query,                  // *query      absolute query start position
-																			 //qptr,                   // *qstart     point position in query (qptr will be variable from the point) 
-																			 //query+querylen,         // *qend       absolute query end position
-																			 //matchprocessinfo->mumcandtab
-																			 //);	
-			//if ( hasmatch )		
-			//{
-				//matchprocessinfo->postprocessmatchfunction(matchprocessinfo->alphabet,
-																					 //query,
-																					 //(unsigned long) (qptr-query),
-																					 //querylen,
-																					 //matchprocessinfo);
-			//}																	
-		//}
-	//}
-	//else 
-	//if ( (matchprocessinfo->matchmode == GT_MATCHMODE_MUMREFERENCE) || (matchprocessinfo->matchmode == GT_MATCHMODE_MAXMATCH) ) 
-	//{  
-		// 对于每一条 query 有一个循环 ＝> 这个query的所有后缀
-		for (qptr = query, remaining = querylen; remaining > 0; qptr++, remaining--)
-		{
-			hasmatch = matchprocessinfo->processmatchfunction((const BWTSeq *) matchprocessinfo->genericindex,
-																			 matchprocessinfo->encseq,
-																			 matchprocessinfo->totallength,
-																			 (matchprocessinfo->leastlength).valueunsignedlong,
-																			 //sptr,                   // *subjectpos
-																			 query,                  // *query      absolute query start position
-																			 qptr,                   // *qstart     point position in query (qptr will be variable from the point) 
-																			 query+querylen,         // *qend       absolute query end position
-																			 matchprocessinfo->maximalmatchtab
-																			 );	
-																			 
-																			 
+	// 对于每一条 query 有一个循环 ＝> 这个query的所有后缀; qptr 是另一个qstart 的名字
+	for (qptr = query, remaining = querylen; remaining > 0; qptr++, remaining--)
+	{
+		hasmatch = matchprocessinfo->processmatchfunction((const BWTSeq *) matchprocessinfo->genericindex,
+																		 matchprocessinfo->encseq,
+																		 matchprocessinfo->totallength,
+																		 (matchprocessinfo->leastlength).valueunsignedlong,
+																		 query,                  // *query      absolute query start position
+																		 qptr,                   // *qstart     point position in query (qptr will be variable from the point) 
+																		 query+querylen,         // *qend       absolute query end position
+																		 matchprocessinfo->maximalmatchtab
+																		 );	
+																		 
+																		 
 
-				if ( hasmatch )		
-				{
-					// in case GT_MATCHMODE_MUMREFERENCE(>=1 records) or GT_MATCHMODE_MUMREFERENCE and GT_MATCHMODE_MUM(==1 record) the maximalmatchtab is not empty 
-					while (gt_array_size(matchprocessinfo->maximalmatchtab)!=0) {
-						Maximalmatch *mm = (Maximalmatch *)gt_array_pop(matchprocessinfo->maximalmatchtab); 
-						if (matchprocessinfo->matchmode == GT_MATCHMODE_MUM)
-		        {	    
-							/*
-								The following code stores the information about a MUM-candidate
-								in the next free position of the dynamic array matchprocessinfo->mumcandtab.
-							*/
-							MUMcandidate mumcandidate;
-							mumcandidate.mumlength = mm->matchlength;
-							mumcandidate.dbstart = mm->dbstart;
-							//mumcandidate.queryseq = unitnum;
-							mumcandidate.querystart = qptr;					    
-							gt_array_add(matchprocessinfo->mumcandtab, mumcandidate);
-				    }
-				    else
-				    {
-							//unsigned long matchlength = mm->matchlength;
-							//unsigned long subjectpos = mm->dbstart;     // 名字不统一 dbstart另一个是subjectpos
-							matchprocessinfo->showmatchfunction(matchprocessinfo->encseq,
-																		 matchprocessinfo->alphabet,
-																		 query,
-																		 (unsigned long) (qptr-query),
-																		 querylen,
-																		 mm->matchlength,
-																		 mm->dbstart,
-																		 matchprocessinfo->showspecinfo);
-					  }
-					
-				  }
-		    }																	
-		}
-		
-		
-		//printf ("# size=%lu \n", gt_array_size(matchprocessinfo->mumcandtab));
-		if (matchprocessinfo->matchmode == GT_MATCHMODE_MUM) 
-	  {	
-		    matchprocessinfo->postprocessmatchfunction(matchprocessinfo, query, querylen);
-		    gt_array_reset(matchprocessinfo->mumcandtab);
-		}
-
-
+			if ( hasmatch )		
+			{
+				// in case GT_MATCHMODE_MUMREFERENCE(>=1 records) or GT_MATCHMODE_MUMREFERENCE and GT_MATCHMODE_MUM(==1 record) the maximalmatchtab is not empty 
+				while (gt_array_size(matchprocessinfo->maximalmatchtab)!=0) {
+					Maximalmatch *mm = (Maximalmatch *)gt_array_pop(matchprocessinfo->maximalmatchtab); 
+					if (matchprocessinfo->matchmode == GT_MATCHMODE_MUM)
+					{	    
+						/*
+							The following code stores the information about a MUM-candidate
+							in the next free position of the dynamic array matchprocessinfo->mumcandtab.
+						*/
+						MUMcandidate mumcandidate;
+						mumcandidate.mumlength = mm->matchlength;
+						mumcandidate.subjectpos = mm->subjectpos;
+						//mumcandidate.queryseq = unitnum;
+						mumcandidate.qstart = qptr;					    
+						gt_array_add(matchprocessinfo->mumcandtab, mumcandidate);
+					}
+					else
+					{
+						matchprocessinfo->showmatchfunction(matchprocessinfo->encseq,
+																	 matchprocessinfo->alphabet,
+																	 query,
+																	 (unsigned long) (qptr-query), // querypos
+																	 querylen,
+																	 mm->matchlength,
+																	 mm->subjectpos,
+																	 matchprocessinfo->showspecinfo);
+					}
+				
+				}
+			}																	
+	}
 	
-
+	
+	//printf ("# size=%lu \n", gt_array_size(matchprocessinfo->mumcandtab));
+	if (matchprocessinfo->matchmode == GT_MATCHMODE_MUM) 
+	{	
+			matchprocessinfo->postprocessmatchfunction(matchprocessinfo, query, querylen);
+			gt_array_reset(matchprocessinfo->mumcandtab);
+	}
 
 }
 
@@ -251,15 +203,11 @@ static void showquerydesc(GT_UNUSED uint64_t unitnum,
 {
 	Showspecinfo *showspecinfo = (Showspecinfo *) info;
   //printf("unit " Formatuint64_t, PRINTuint64_tcast(unitnum));
-	////char *pch = strchr(querydesc,' ');
-	////unsigned long querydesclength = (unsigned long)(pch-querydesc);
   if (querydesc != NULL && querydesc[0] != '\0')
-  {
-		////char *buf = gt_calloc(1, sizeof (char) * (querydesclength +1));  
-    ////(void) strncpy(buf, querydesc, querydesclength);
-    
+  {   
 		if (showspecinfo->showsequencelengths)
 		{
+			// first line is query sequence
 			if (showspecinfo->queryreadmode==GT_READMODE_FORWARD)
 		  {
 			  printf("> %s  Len = %lu",querydesc,querylen);
@@ -268,21 +216,25 @@ static void showquerydesc(GT_UNUSED uint64_t unitnum,
 			{
 				printf("> %s Reverse  Len = %lu",querydesc,querylen);
 			}
-			//printf("> %s  Len = %lu",buf,querylen); // first line is query sequence
 		} 
 		else
 		{
 			printf("> %s",querydesc);
 		} 
-		////gt_free(buf);
   }
   printf("\n");
 }
 
 
+/*
+  The following is a function to further process mum-candidate,
+  maxmatch or mum specfied by its length, its start position
+  in the subject sequence as well as the start of the match in the query.
+  Then it shows the relevant information as a triple of three integers.
+*/
 static void showmaximalmatch(const GtEncseq *encseq,
                                 const GtAlphabet *alphabet,
-                                const GtUchar *start,                 
+                                const GtUchar *query,                 
                                 unsigned long querypos,
                                 unsigned long querylength,
                                 unsigned long matchlength,
@@ -327,7 +279,7 @@ static void showmaximalmatch(const GtEncseq *encseq,
 		printf("%8lu\n",matchlength);
 		if (showspecinfo->showstring)
 		{
-			gt_alphabet_decode_seq_to_fp(alphabet,stdout,start + querypos,
+			gt_alphabet_decode_seq_to_fp(alphabet,stdout,query + querypos,
 																	 matchlength);
 			(void) putchar('\n');															 
 		}
@@ -340,8 +292,8 @@ static void showmaximalmatch(const GtEncseq *encseq,
 	showmatchfunction.
 */
 static void mumuniqueinquery(void *info,                                       
-                                      const GtUchar *query,
-                                      unsigned long querylen)
+                             const GtUchar *query,
+                             unsigned long querylen)
 {	
 	  Matchprocessinfo *matchprocessinfo = (Matchprocessinfo *) info;
 		if(gt_array_size(matchprocessinfo->mumcandtab) > 0)
@@ -351,7 +303,7 @@ static void mumuniqueinquery(void *info,
 			bool ignorecurrent, ignoreprevious = false;
 			
 			/*
-				Sort all MUM-candidates according by increasing dbstart-value
+				Sort all MUM-candidates according by increasing subjectpos-value
 				and decreasing length.
 			*/
 			gt_array_sort_stable(matchprocessinfo->mumcandtab, (GtCompare)compareMUMcandidates); 
@@ -361,7 +313,7 @@ static void mumuniqueinquery(void *info,
 				mumcandptr = (MUMcandidate *)gt_array_get(matchprocessinfo->mumcandtab, i);
 
 				ignorecurrent = false;
-				currentright = mumcandptr->dbstart + mumcandptr->mumlength - 1;
+				currentright = mumcandptr->subjectpos + mumcandptr->mumlength - 1;
 				if(dbright > currentright)
 				{
 					// 排除真包含的情况
@@ -372,7 +324,7 @@ static void mumuniqueinquery(void *info,
 					{
 						ignorecurrent = true;
 						// ( (如果前一个没有被 排除 ) && (两个mumcand 对应同一段 dbsubstring=>这两个mumcand重复了) ) => 排除前一个
-						if(!ignoreprevious && (mumcandptr-1)->dbstart == mumcandptr->dbstart)
+						if(!ignoreprevious && (mumcandptr-1)->subjectpos == mumcandptr->subjectpos)
 						{
 							ignoreprevious = true;
 						}
@@ -386,10 +338,10 @@ static void mumuniqueinquery(void *info,
 					matchprocessinfo->showmatchfunction(matchprocessinfo->encseq,
 																 matchprocessinfo->alphabet,
 																 query,
-																 (unsigned long) ((mumcandptr-1)->querystart-query),
+																 (unsigned long) ((mumcandptr-1)->qstart-query),
 																 querylen,
 																 (mumcandptr-1)->mumlength,
-																 (mumcandptr-1)->dbstart,
+																 (mumcandptr-1)->subjectpos,
 																 matchprocessinfo->showspecinfo);
 				}
 				ignoreprevious = ignorecurrent;
@@ -402,10 +354,10 @@ static void mumuniqueinquery(void *info,
 				matchprocessinfo->showmatchfunction(matchprocessinfo->encseq,
 																 matchprocessinfo->alphabet,
 																 query,
-																 (unsigned long) (mumcandptr->querystart-query),
+																 (unsigned long) (mumcandptr->qstart-query),
 																 querylen,
 																 mumcandptr->mumlength,
-																 mumcandptr->dbstart,
+																 mumcandptr->subjectpos,
 																 matchprocessinfo->showspecinfo);			
 			}
 								
@@ -464,27 +416,22 @@ int gt_findmum(const GtEncseq *encseq,
   
   
   matchprocessinfo.alphabet = alphabet;
-  //matchprocessinfo.processinfo = &rangespecinfo;
   matchprocessinfo.encseq = encseq;
-  
+  matchprocessinfo.showspecinfo = &showspecinfo;  
 
   GtArray *mumcandtab = gt_array_new(sizeof (MUMcandidate));
   GtArray *maximalmatchtab = gt_array_new(sizeof (Maximalmatch));
   matchprocessinfo.mumcandtab = mumcandtab;
   matchprocessinfo.maximalmatchtab = maximalmatchtab;
   matchprocessinfo.leastlength = leastlength;
-  matchprocessinfo.showspecinfo = &showspecinfo;
-  
-  
+
   showspecinfo.nucleotidesonly = nucleotidesonly;                  
   //rangespecinfo.bothdirections = bothdirections;                  
   //rangespecinfo.reversecomplement = reversecomplement;                   
   showspecinfo.showstring = showstring;                         
   showspecinfo.showreversepositions = showreversepositions;                   
   showspecinfo.showsequencelengths = showsequencelengths;
-  // fill the original model of 3 functions, it actually misses 2 functions, the other 2 are processgmatchlength, postprocessgmatchlength
 
-  
   // analyse the queryfilenames with seqiterator
   seqit = gt_seqiterator_sequence_buffer_new(queryfilenames, err);
   if (!seqit)
@@ -552,8 +499,6 @@ int gt_findmum(const GtEncseq *encseq,
       FREESPACE(querydesc);
     }
     gt_seqiterator_delete(seqit);
-    //gt_array_reset(mumcandtab);
-    gt_array_reset(maximalmatchtab);
   }
   gt_array_delete(mumcandtab);
   gt_array_delete(maximalmatchtab);

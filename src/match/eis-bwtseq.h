@@ -508,34 +508,17 @@ gt_EMINumMatchesLeft(const BWTSeqExactMatchesIterator *iter);
 typedef struct
 {
   unsigned long matchlength,    // length of the mum
-       dbstart;     // start position in the subject-sequence     
+                subjectpos;        // start position in the subject-sequence     
 } Maximalmatch; 
 
 
 typedef struct
 {
   unsigned long mumlength,    // length of the mum
-       dbstart;      // start position in the subject-sequence
-       //queryseq,     // number of the query sequence
-  const GtUchar *querystart;   // start position in the query sequence      
+                subjectpos;      // start position in the subject-sequence
+  const GtUchar *qstart;  // start position in the query sequence      
 } MUMcandidate; 
 
-
-
-
-//typedef struct Rangespecinfo Rangespecinfo;
-//typedef struct 
-//{
-	//GtArray mumcandtab;
-  //bool nucleotidesonly,                     
-       ////bothdirections,                    
-       ////reversecomplement,                    
-       //showstring,                           
-       //showreversepositions,                     
-       //showsequencelengths;   
-  //Definedunsignedlong leastlength;
-  //GtReadmode queryreadmode;
-//} Rangespecinfo;
 
 bool gt_packedindexmumreference(const BWTSeq *bwtSeq,
                                 const GtEncseq *encseq,
