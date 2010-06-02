@@ -17,31 +17,24 @@
 #ifndef MAXMAT4_H
 #define MAXMAT4_H
 
-//#include <stdbool.h>
-//#include "core/alphabet.h"
-//#include "core/error.h"
-//#include "core/intdef.h"
-//#include "core/str_array.h"
 #include "core/defined-types.h"
 #include "core/encseq.h"
 #include "match/matchmode_api.h"
 
-
-
 int gt_findmum(const GtEncseq *encseq,
-                              const void *genericindex,
-                              unsigned long totallength,
-                              const GtAlphabet *alphabet,
-                              const GtStrArray *queryfilenames,
-                              GtMatchmode matchmode,
-                              Definedunsignedlong leastlength,
-                              bool nucleotidesonly,                     
-                              bool bothdirections,                    
-                              bool reversecomplement,                    
-                              bool showstring,                           
-                              bool showreversepositions,                     
-                              bool showsequencelengths,   
-                              bool verbose,                  
-                              GtError *err);
+               const void *genericindex,
+               unsigned long totallength,
+               const GtAlphabet *alphabet,
+               const GtStrArray *queryfilenames,
+               GtMatchmode matchmode,
+               Definedunsignedlong leastlength,
+               bool nucleotidesonly,
+               bool bothdirections,
+               bool reversecomplement,
+               bool showstring,
+               bool showreversepositions,
+               bool showsequencelengths,
+               bool verbose,
+               GtError *err);
 
 #endif

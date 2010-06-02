@@ -41,7 +41,6 @@
 #include "match/eis-voiditf.h"
 #include "spacedef.h"
 
-
 /**
  * @param alphabet ownership of alphabet is with the newly produced
  * sequence object if return value is not 0
@@ -196,242 +195,6 @@ getMatchBound(const BWTSeq *bwtSeq, const Symbol *query, size_t queryLen,
                                   (unsigned long) match->end);
   */
 }
-
-
-
-
-
-
-
-static bool isleftmaximal(const GtEncseq *encseq,
-                         unsigned long subjectpos,
-                         const GtUchar *query,       
-                         const GtUchar *qstart)
-{
-	// check the left maximal        
-	bool leftmaximal = false;					
-	if (subjectpos==0 || qstart==query ) {
-		leftmaximal = true;
-	} else {
-		 GtUchar dbleftchar = gt_encseq_get_encoded_char(encseq, 
-															subjectpos-1,
-															GT_READMODE_FORWARD); 
-		if (ISSPECIAL(dbleftchar) || dbleftchar != *(qstart-1) ) {
-			leftmaximal = true;
-		}	else {
-			leftmaximal = false;
-		}
-	}
-	return leftmaximal;	
-}
-
-static unsigned long lcp(const GtEncseq *encseq,
-                         unsigned long dbrightbound,
-                         unsigned long totallength,
-                         const GtUchar *qnewstart,      
-                         const GtUchar *qend)
-{
-  const GtUchar *qptr = qnewstart;
-	GtUchar dbrightboundchar = gt_encseq_get_encoded_char(encseq, 
-														               dbrightbound,
-														               GT_READMODE_FORWARD);	
-														
-
-  while(qptr < qend &&
-        (dbrightbound < totallength) && !ISSPECIAL(dbrightboundchar) &&
-        *qptr == dbrightboundchar )
-  {
-    qptr++;
-    dbrightbound++;
-		dbrightboundchar = gt_encseq_get_encoded_char(encseq, 
-																	 dbrightbound,
-																	 GT_READMODE_FORWARD);	
-  }
-  return (unsigned long) (qptr-qnewstart);
-}
-
-
-
-
-
-
-// for mumreference
-bool gt_packedindexmumreference(const BWTSeq *bwtSeq,
-                                const GtEncseq *encseq,
-                                unsigned long totallength,      // totallength of encseq
-                                unsigned long leastlength,
-                                       const GtUchar *query,    // absolute query start position
-                                       const GtUchar *qstart,   // point position in query (qptr will be variable from the point) 
-                                       const GtUchar *qend,     // absolute query end position
-                                       GtArray *maximalmatchtab
-                                       )              
-{	
-  GtUchar cc;
-  const GtUchar *qptr;
-  struct matchBound bwtbound;
-  struct GtUlongPair seqpospair;
-  Symbol curSym;
-  unsigned long matchlength = 0;
-  const MRAEnc *alphabet;
-
-  gt_assert(bwtSeq && qstart);
-  alphabet = BWTSeqGetAlphabet(bwtSeq);
-  qptr = qstart;
-  
-  cc = *qptr;
-  if (ISSPECIAL(cc))
-  {
-    return 0;
-  }
-  curSym = MRAEncMapSymbol(alphabet, cc);
-  bwtbound.start = bwtSeq->count[curSym];
-  bwtbound.end = bwtSeq->count[curSym+1];
-   
-	matchlength = (unsigned long) (qptr - qstart + 1);        
-  qptr++;     
-                                                  
-  while (qptr < qend && bwtbound.start < bwtbound.end) 
-  {
-    cc = *qptr;
-    if (ISSPECIAL (cc))
-    {
-      return 0;
-    }
-    curSym = MRAEncMapSymbol(alphabet, cc);
-    seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
-                                             bwtbound.start,bwtbound.end);
-    bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
-    bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;
-      
-     
-    matchlength = (unsigned long) (qptr - qstart + 1);
-
-    if ( (matchlength >= leastlength) && (bwtbound.start+1 == bwtbound.end) )
-    {
-			unsigned long subjectpos = gt_voidpackedfindfirstmatchconvert((const FMindex *)bwtSeq,
-																								 bwtbound.start,
-																								 matchlength);
-																																										
-			// this line moves forwards						
-			if (isleftmaximal(encseq,subjectpos,query,qstart)) {									
-											
-				// compare next char, i.e. subjectpos+matchlength against qptr+1
-				unsigned long additionalmatchlength = lcp(encseq,
-																									 subjectpos+matchlength, 
-																									 totallength,
-																									 qptr+1,
-																									 qend);
-				matchlength += additionalmatchlength;																						 
-
-				Maximalmatch maximalmatch;
-				maximalmatch.matchlength = matchlength;
-				maximalmatch.subjectpos = subjectpos;
-				gt_array_add(maximalmatchtab, maximalmatch);
-				
-				return true;  
-			}	
-
-    }
-    // together forwards
-    qptr++;    
-  }
-
-  return false;
-}
-  
-  
-  
-  
-bool gt_packedindexmaxmatch(const BWTSeq *bwtSeq,
-                                const GtEncseq *encseq,
-                                unsigned long totallength,
-                                unsigned long leastlength,
-                                       const GtUchar *query,    // absolute query start position
-                                       const GtUchar *qstart,   // point position in query (qptr will be variable from the point) 
-                                       const GtUchar *qend,     // absolute query end position
-                                       GtArray *maximalmatchtab)           
-{	
-  GtUchar cc;
-  const GtUchar *qptr;
-  struct matchBound bwtbound;
-  struct GtUlongPair seqpospair;
-  Symbol curSym;
-  unsigned long matchlength = 0;
-  const MRAEnc *alphabet;
-  unsigned long bwtboundthisline;
-
-  gt_assert(bwtSeq && qstart);
-  alphabet = BWTSeqGetAlphabet(bwtSeq);
-  qptr = qstart;
-  
-  
-  
-  cc = *qptr;
-  if (ISSPECIAL(cc))
-  {
-    return 0;
-  }
-  curSym = MRAEncMapSymbol(alphabet, cc);
-  bwtbound.start = bwtSeq->count[curSym];
-  bwtbound.end = bwtSeq->count[curSym+1];
-   
-	matchlength = (unsigned long) (qptr - qstart + 1);        
-  qptr++;     
-                                                       
-  while (qptr < qend && bwtbound.start < bwtbound.end)
-  {
-    cc = *qptr;
-    if (ISSPECIAL (cc))
-    {
-      return 0;
-    }
-    curSym = MRAEncMapSymbol(alphabet, cc);
-    seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
-                                             bwtbound.start,bwtbound.end);
-    bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
-    bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;
-      
-     
-    matchlength = (unsigned long) (qptr - qstart + 1);
-
-    if (matchlength == leastlength)
-    {
-			for (bwtboundthisline=bwtbound.start; bwtboundthisline < bwtbound.end; bwtboundthisline++) 
-			{ 
-				unsigned long subjectposthisline = gt_voidpackedfindfirstmatchconvert((const FMindex *)bwtSeq,
-																									 bwtboundthisline,
-																									 matchlength);
-																																				
-				if (isleftmaximal(encseq,subjectposthisline,query,qstart)) {	
-					// every line moves forwards			
-					unsigned long matchlengththisline = matchlength;
-												
-					// compare next char, i.e. subjectpos+matchlength against qptr+1
-					unsigned long additionalmatchlengththisline = lcp(encseq,
-																										 subjectposthisline+matchlengththisline, 
-																										 totallength,
-																										 qptr+1,
-																										 qend);
-					matchlengththisline += additionalmatchlengththisline;			
-
-					Maximalmatch maximalmatch;
-					maximalmatch.matchlength = matchlengththisline;
-					maximalmatch.subjectpos = subjectposthisline;
-					gt_array_add(maximalmatchtab, maximalmatch);
-				}
-		  }
-		  return true;	
-
-    }
-    // together forwards
-    qptr++;    
-  }
-  return false;
-}
-
-
-
-
 
 unsigned long gt_packedindexuniqueforward(const BWTSeq *bwtSeq,
                                        const GtUchar *qstart,
@@ -893,4 +656,254 @@ gt_BWTSeqVerifyIntegrity(BWTSeq *bwtSeq, const char *projectName,
   if (suffixArrayIsInitialized) gt_freesuffixarray(&suffixArray);
   if (extBitsAreInitialized) destructExtBitsRetrieval(&extBits);
   return retval;
+}
+
+/** the function check if the mapped sequence is left maximal */
+static bool isleftmaximal(const GtEncseq *encseq,
+                         unsigned long subjectpos,
+                         const GtUchar *query,
+                         const GtUchar *qstart)
+{
+  bool leftmaximal = false;
+  if (subjectpos==0 || qstart==query ) {
+    leftmaximal = true;
+  } else {
+     GtUchar dbleftchar = gt_encseq_get_encoded_char(encseq,
+                              subjectpos-1,
+                              GT_READMODE_FORWARD);
+    if (ISSPECIAL(dbleftchar) || dbleftchar != *(qstart-1) ) {
+      leftmaximal = true;
+    }  else {
+      leftmaximal = false;
+    }
+  }
+  return leftmaximal;
+}
+
+/**
+ * the function calculate the long common prefix
+ * between reference sequence and query sequence
+ * from the qnewstart position.
+ * qnewstart position refer to the first position >= leastlength
+ * after general map-process with bwt
+ */
+static unsigned long lcp(const GtEncseq *encseq,
+                         unsigned long dbrightbound,
+                         unsigned long totallength,
+                         const GtUchar *qnewstart,
+                         const GtUchar *qend)
+{
+  const GtUchar *qptr = qnewstart;
+  GtUchar dbrightboundchar = gt_encseq_get_encoded_char(encseq,
+                                           dbrightbound,
+                                           GT_READMODE_FORWARD);
+
+  while (qptr < qend &&
+        (dbrightbound < totallength) && !ISSPECIAL(dbrightboundchar) &&
+        *qptr == dbrightboundchar )
+  {
+    qptr++;
+    dbrightbound++;
+    dbrightboundchar = gt_encseq_get_encoded_char(encseq,
+                                   dbrightbound,
+                                   GT_READMODE_FORWARD);
+  }
+  return (unsigned long) (qptr-qnewstart);
+}
+
+/** for option mumreference */
+bool gt_packedindexmumreference(const BWTSeq *bwtSeq,
+                                const GtEncseq *encseq,
+                                /* total length of encseq */
+                                unsigned long totallength,
+                                unsigned long leastlength,
+                                /* absolute query start position */
+                                const GtUchar *query,
+                                /* variable position in query */
+                                const GtUchar *qstart,
+                                /* absolute query end position */
+                                const GtUchar *qend,
+                                GtArray *maximalmatchtab)
+{
+  GtUchar cc;
+  const GtUchar *qptr;
+  struct matchBound bwtbound;
+  struct GtUlongPair seqpospair;
+  Symbol curSym;
+  unsigned long matchlength = 0;
+  const MRAEnc *alphabet;
+
+  gt_assert(bwtSeq && qstart);
+  alphabet = BWTSeqGetAlphabet(bwtSeq);
+  qptr = qstart;
+
+  cc = *qptr;
+  if (ISSPECIAL(cc))
+  {
+    return 0;
+  }
+  curSym = MRAEncMapSymbol(alphabet, cc);
+  bwtbound.start = bwtSeq->count[curSym];
+  bwtbound.end = bwtSeq->count[curSym+1];
+
+  matchlength = (unsigned long) (qptr - qstart + 1);
+  qptr++;
+
+  while (qptr < qend && bwtbound.start < bwtbound.end)
+  {
+    cc = *qptr;
+    if (ISSPECIAL (cc))
+    {
+      return 0;
+    }
+    curSym = MRAEncMapSymbol(alphabet, cc);
+    seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
+                                             bwtbound.start,bwtbound.end);
+    bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
+    bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;
+
+    matchlength = (unsigned long) (qptr - qstart + 1);
+    /*
+     * when the matchlength go beyond lastlength,
+     * the general map process will be ended
+     * and map advanced with function lcp(...)
+     */
+    if ( (matchlength >= leastlength) && (bwtbound.start+1 == bwtbound.end) )
+    {
+      unsigned long subjectpos =\
+              gt_voidpackedfindfirstmatchconvert((const FMindex *)bwtSeq,
+                                                 bwtbound.start,
+                                                 matchlength);
+
+      /* check if it is left maximal */
+      if (isleftmaximal(encseq,subjectpos,query,qstart)) {
+
+        /*
+         * calculate long common prefix
+         * between reference sequence from (subjectpos + matchlength)
+         * against query sequence from qptr+1
+         */
+        unsigned long additionalmatchlength = lcp(encseq,
+                                                   subjectpos+matchlength,
+                                                   totallength,
+                                                   qptr+1,
+                                                   qend);
+        matchlength += additionalmatchlength;
+
+        /*
+         * save the result in the dynamic array maximalmatchtab.
+         * actually it is only one record, so that it doesn't need
+         * a dynamic array, but for general catch of the data
+         * in maxmat4.c/function:matchposinsinglesequence with while-loop
+         * from the difference sources => we use a table structure here
+         */
+        Maximalmatch maximalmatch;
+        maximalmatch.matchlength = matchlength;
+        maximalmatch.subjectpos = subjectpos;
+        gt_array_add(maximalmatchtab, maximalmatch);
+
+        return true;
+      }
+    }
+    /* general map process */
+    qptr++;
+  }
+  return false;
+}
+
+/** for option maxmatch */
+bool gt_packedindexmaxmatch(const BWTSeq *bwtSeq,
+                            const GtEncseq *encseq,
+                            unsigned long totallength,
+                            unsigned long leastlength,
+                            /* absolute query start position */
+                            const GtUchar *query,
+                            /* variable position in query */
+                            const GtUchar *qstart,
+                            /* absolute query end position */
+                            const GtUchar *qend,
+                            GtArray *maximalmatchtab)
+{
+  GtUchar cc;
+  const GtUchar *qptr;
+  struct matchBound bwtbound;
+  struct GtUlongPair seqpospair;
+  Symbol curSym;
+  unsigned long matchlength = 0;
+  const MRAEnc *alphabet;
+  unsigned long bwtboundthisline;
+
+  gt_assert(bwtSeq && qstart);
+  alphabet = BWTSeqGetAlphabet(bwtSeq);
+  qptr = qstart;
+
+  cc = *qptr;
+  if (ISSPECIAL(cc))
+  {
+    return 0;
+  }
+  curSym = MRAEncMapSymbol(alphabet, cc);
+  bwtbound.start = bwtSeq->count[curSym];
+  bwtbound.end = bwtSeq->count[curSym+1];
+
+  matchlength = (unsigned long) (qptr - qstart + 1);
+  qptr++;
+
+  while (qptr < qend && bwtbound.start < bwtbound.end)
+  {
+    cc = *qptr;
+    if (ISSPECIAL (cc))
+    {
+      return 0;
+    }
+    curSym = MRAEncMapSymbol(alphabet, cc);
+    seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
+                                             bwtbound.start,bwtbound.end);
+    bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
+    bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;
+
+    matchlength = (unsigned long) (qptr - qstart + 1);
+    if (matchlength == leastlength)
+    {
+      for (bwtboundthisline=bwtbound.start;\
+           bwtboundthisline < bwtbound.end; bwtboundthisline++)
+      {
+        unsigned long subjectposthisline =\
+                gt_voidpackedfindfirstmatchconvert((const FMindex *)bwtSeq,
+                                                   bwtboundthisline,
+                                                   matchlength);
+
+        if ( isleftmaximal(encseq,subjectposthisline,query,qstart) ) {
+          /* every line moves forwards */
+          unsigned long matchlengththisline = matchlength;
+
+          /*
+           * calculate long common prefix for every line
+           * between this reference sequence snippet
+           * from (subjectposthisline + matchlengththisline)
+           * against query sequence from qptr+1
+           */
+          unsigned long additionalmatchlengththisline =\
+                                  lcp(encseq,
+                                      subjectposthisline + matchlengththisline,
+                                      totallength,
+                                      qptr+1,
+                                      qend);
+          matchlengththisline += additionalmatchlengththisline;
+
+          /*
+           * save the result in the dynamic array maximalmatchtab.
+           */
+          Maximalmatch maximalmatch;
+          maximalmatch.matchlength = matchlengththisline;
+          maximalmatch.subjectpos = subjectposthisline;
+          gt_array_add(maximalmatchtab, maximalmatch);
+        }
+      }
+      return true;
+    }
+    /* together forwards */
+    qptr++;
+  }
+  return false;
 }

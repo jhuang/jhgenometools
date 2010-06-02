@@ -498,49 +498,6 @@ gt_EMINumMatchesTotal(const BWTSeqExactMatchesIterator *iter);
 unsigned long
 gt_EMINumMatchesLeft(const BWTSeqExactMatchesIterator *iter);
 
-
-/*
-  The following structure stores MUM candidates. That is, maximal matches
-  which are unique in the subject-sequence but not necessarily in the
-  query sequence.
-*/
-
-typedef struct
-{
-  unsigned long matchlength,    // length of the mum
-                subjectpos;        // start position in the subject-sequence     
-} Maximalmatch; 
-
-
-typedef struct
-{
-  unsigned long mumlength,    // length of the mum
-                subjectpos;      // start position in the subject-sequence
-  const GtUchar *qstart;  // start position in the query sequence      
-} MUMcandidate; 
-
-
-bool gt_packedindexmumreference(const BWTSeq *bwtSeq,
-                                const GtEncseq *encseq,
-                                unsigned long totallength,
-                                unsigned long leastlength,
-                                       const GtUchar *query,    // absolute query start position
-                                       const GtUchar *qstart,   // point position in query (qptr will be variable from the point) 
-                                       const GtUchar *qend,     // absolute query end position
-                                       GtArray *maximalmatchtab
-                                       );
-                                       
-bool gt_packedindexmaxmatch(const BWTSeq *bwtSeq,
-                                const GtEncseq *encseq,
-                                unsigned long totallength,
-                                unsigned long leastlength,
-                                       const GtUchar *query,    // absolute query start position
-                                       const GtUchar *qstart,   // point position in query (qptr will be variable from the point) 
-                                       const GtUchar *qend,     // absolute query end position
-                                       GtArray *maximalmatchtab);
-                                           
-                                                 
-                                       
 /**
  * @brief for packed index (given as void pointer), compute the longest
  * prefix of string in range between qstart and qend that occurs exactly
@@ -559,6 +516,74 @@ unsigned long gt_packedindexmstatsforward(const BWTSeq *bwtseq,
                                        unsigned long *witnessposition,
                                        const GtUchar *qstart,
                                        const GtUchar *qend);
+
+/** The following structure stores maximal matches.
+  It could be type mum candidate or type maxmatch. */
+typedef struct
+{
+  unsigned long matchlength,  /* length of the mum */
+                subjectpos;   /* start position in the subject-sequence */
+} Maximalmatch;
+
+/** The following structure stores MUM candidates. That is, maximal matches
+  which are unique in the subject-sequence but not necessarily in the
+  query sequence. */
+typedef struct
+{
+  unsigned long mumlength,    /* length of the mum */
+                subjectpos;   /* start position in the subject-sequence */
+  const GtUchar *qstart;      /* start position in the query sequence */
+} MUMcandidate;
+
+/**
+ * @brief for packed index (given as void pointer), compute MUM-candidate
+ * in range between qstart and qend. The MUM-candidate must longer than
+ * or equal as the leastlength and it is unique in the reference-sequence
+ * but not necessarily in the query-sequence. The result is saved in the
+ * dynamic array maximalmatchtab
+ * @param packed index of reference sequence (given as void pointer)
+ * @param reference sequence in encoded form (given as void pointer)
+ * @param total length of reference sequence
+ * @param threshold length for the calculation
+ * @param query points to memory area where whole query is absolut started
+ * @param qstart points to memory area where query is found
+ * @param qend points to memory area immediately after the query
+ * @param dynamic array save the computed result
+ * @return true if there is a result, false if no result is saved
+ */
+bool gt_packedindexmumreference(const BWTSeq *bwtSeq,
+                                const GtEncseq *encseq,
+                                unsigned long totallength,
+                                unsigned long leastlength,
+                                const GtUchar *query,
+                                const GtUchar *qstart,
+                                const GtUchar *qend,
+                                GtArray *maximalmatchtab);
+
+/**
+ * @brief for packed index (given as void pointer), compute all maximal
+ * matches in range between qstart and qend. The maximal matches must
+ * longer than or equal as the leastlength and it doesn't need uniqueness
+ * in both sequences (reference-sequence and query-sequence). The results
+ * are saved in the dynamic array maximalmatchtab.
+ * @param packed index of reference sequence (given as void pointer)
+ * @param reference sequence in encoded form (given as void pointer)
+ * @param total length of reference sequence
+ * @param threshold length for the calculation
+ * @param query points to memory area where whole query is absolut started
+ * @param qstart points to memory area where query is found
+ * @param qend points to memory area immediately after the query
+ * @param dynamic array save the computed results
+ * @return true if there are results, false if no result is saved
+ */
+bool gt_packedindexmaxmatch(const BWTSeq *bwtSeq,
+                                const GtEncseq *encseq,
+                                unsigned long totallength,
+                                unsigned long leastlength,
+                                const GtUchar *query,
+                                const GtUchar *qstart,
+                                const GtUchar *qend,
+                                GtArray *maximalmatchtab);
 
 #include "match/eis-bwtseq-siop.h"
 

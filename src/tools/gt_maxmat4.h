@@ -22,5 +22,4 @@
 /* the maximal matches */
 GtTool* gt_maxmat4(void);
 
-
 #endif

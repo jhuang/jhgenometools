@@ -28,10 +28,10 @@ typedef enum
 } GtMatchmode;
 
 /* Returns the descriptive string for the matchmode <matchmode>. */
-//const char* gt_matchmode_show(GtMatchmode matchmode);
+/* TODO: const char* gt_matchmode_show(GtMatchmode matchmode); */
 /* Returns the <GtMatchmode> for the description <string>, which must be one
    of "mum","mumreference" or "maxmatch. If <string> does not equal any of them,
    -1 is returned and <err> is set accordingly. */
-//int         gt_matchmode_parse(const char *string, GtError *err);
+/* TODO: gt_matchmode_parse(const char *string, GtError *err); */
 
 #endif
