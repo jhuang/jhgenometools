@@ -53,7 +53,7 @@ def checkmaxmat4withmummer(reffile,queryfile,matchmode)
   pckname=reffile + "-pck"                                                 
   run_test "#{$bin}gt packedindex mkindex -bsize 10 -locfreq 8 -dir rev -db " +
            "#{reffilepath} -indexname #{pckname} -sprank -dna -ssp -des -sds -pl"   #-sprank -dna -tis -ssp -des -sds -pl
-  run_test("#{$bin}gt dev maxmat4 -#{matchmode} -b -l #{determinemaxmatchminlength(reffile)} -L -s -c -n #{pckname} #{queryfilepath}", :maxtime => 320)
+  run_test("#{$bin}gt dev maxmat4 -#{matchmode} -b -l #{determinemaxmatchminlength(reffile)} -L -s -c #{pckname} #{queryfilepath}", :maxtime => 320)
   #run "grep -v '^>' #{$last_stdout} | sort"  
   if (matchmode=="mumreference" || matchmode=="mum") 
       run "sed -e '/^>/d' #{$last_stdout}"
@@ -67,7 +67,7 @@ end
 def generatemummerresults(reffile, queryfile, matchmode)
   reffilepath=addfilepath(reffile)
   queryfilepath=addfilepath(queryfile)
-  run "~/Desktop/maxmat3/mm3src/maxmat3.x -#{matchmode} -b -l #{determinemaxmatchminlength(reffile)} -L -s -c -n #{reffilepath} #{queryfilepath}"
+  run "~/maxmat3/mm3src/maxmat3.x -#{matchmode} -b -l #{determinemaxmatchminlength(reffile)} -L -s -c -n #{reffilepath} #{queryfilepath}"
   #run "grep -v '^>' #{$last_stdout} | sort" 
   if (matchmode=="mumreference" || matchmode=="mum") 
       run "sed -e '/^>/d' #{$last_stdout}"         
@@ -192,7 +192,7 @@ def checkmaxmat4withrepfind(reffile,queryfile,minlength)
   pckname=reffile + "-pck"                                                 
   run_test "#{$bin}gt packedindex mkindex -bsize 10 -locfreq 8 -dir rev -db " +
            "#{reffilepath} -indexname #{pckname} -sprank -dna -ssp -des -sds -pl"      
-  run_test("#{$bin}gt dev maxmat4 -maxmatch -l #{minlength} -L -n #{pckname} #{queryfilepath}", :maxtime => 320)
+  run_test("#{$bin}gt dev maxmat4 -maxmatch -l #{minlength} -L #{pckname} #{queryfilepath}", :maxtime => 320)
   formatmaxmat4output("#{$last_stdout}")
   run "sed -e '/^>/d' #{$last_stdout} | sort"            
   run "mv #{$last_stdout} maxmat4.result"

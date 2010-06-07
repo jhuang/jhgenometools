@@ -50,8 +50,7 @@ typedef void (*Showmatchfunction)(const GtEncseq *encseq,
 
 typedef struct
 {
-  bool nucleotidesonly,
-       showstring,
+  bool showstring,
        showreversepositions,
        showsequencelengths;
   GtReadmode queryreadmode;
@@ -363,7 +362,6 @@ int gt_findmum(const GtEncseq *encseq,
                               const GtStrArray *queryfilenames,
                               const GtMatchmode matchmode,
                               Definedunsignedlong leastlength,
-                              bool nucleotidesonly,
                               bool bothdirections,
                               bool reversecomplement,
                               bool showstring,
@@ -415,7 +413,6 @@ int gt_findmum(const GtEncseq *encseq,
   matchprocessinfo.maximalmatchtab = maximalmatchtab;
   matchprocessinfo.leastlength = leastlength;
 
-  showspecinfo.nucleotidesonly = nucleotidesonly;
   showspecinfo.showstring = showstring;
   showspecinfo.showreversepositions = showreversepositions;
   showspecinfo.showsequencelengths = showsequencelengths;

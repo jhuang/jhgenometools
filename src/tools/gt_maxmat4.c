@@ -24,7 +24,6 @@ typedef struct {
   bool mum,
        mumreference,
        maxmatch,
-       nucleotidesonly,                      /* matchnucleotidesonly */
        bothdirections,                       /* computebothdirections */
        reversecomplement,                    /* onlyreversecomplementmatches */
        showstring,                           /* showstring */
@@ -54,7 +53,7 @@ static void gt_maxmat4_arguments_delete(void *tool_arguments)
 static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
 {
   GtMaxmat4Arguments *arguments = (GtMaxmat4Arguments*)tool_arguments;
-  GtOption *option_mum, *option_mumreference, *option_maxmatch,*option_n,
+  GtOption *option_mum, *option_mumreference, *option_maxmatch,
            *option_l,*option_b, *option_r, *option_s, *option_c, *option_L;
   GtOptionParser *op;
 
@@ -64,7 +63,9 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
       "[options] <reference-file> <query-files>[...]",
       "Find and output (to stdout) the positions and length of all "
       "sufficiently long (unique) maximal matches of a substring in "
-      "<reference-file>(in format of specify packed index) and <query-file>.");
+      "<reference-file>(in format of specify packed index) and <query-file>. "
+      "match only the characters a, c, g, or t, "
+      "they can be in upper or in lower case.");
   gt_option_parser_set_mailaddress(op,"<gt-users@genometools.org>");
 
   /* -mum */
@@ -88,13 +89,6 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
       "compute all maximal matches, regardless of their uniqueness ",
       &arguments->maxmatch, false);
   gt_option_parser_add_option(op, option_maxmatch);
-
-  /* -n for matchnucleotidesonly */
-  option_n = gt_option_new_bool("n",
-       "match only the characters a, c, g, or t "
-       "they can be in upper or in lower case",
-       &arguments->nucleotidesonly, false);
-  gt_option_parser_add_option(op, option_n);
 
   /* -l for leastlength */
   option_l = gt_option_new_ulong_min("l",
@@ -179,6 +173,7 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   bool haserr = false;
   const GtAlphabet *alphabet = NULL;
   unsigned long totallength;
+  unsigned int mappedbits;
 
   /* init the referencefile and queryfiles */
   GtStr *referencefile = gt_str_new_cstr(argv[arg]);
@@ -203,7 +198,7 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   gt_error_check(err);
   gt_assert(tool_arguments);
   logger = gt_logger_new(false, GT_LOGGER_DEFLT_PREFIX, stdout);
-  unsigned int mappedbits = SARR_ESQTAB|SARR_SSPTAB|SARR_DESTAB|SARR_SDSTAB;
+  mappedbits = SARR_ESQTAB|SARR_SSPTAB|SARR_DESTAB|SARR_SDSTAB;
 
   /*
    * map suffixarray from referencefile, a referencefile contains maybe many
@@ -261,7 +256,6 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
                    queryfiles,
                    matchmode,
                    arguments->leastlength,
-                   arguments->nucleotidesonly,
                    arguments->bothdirections,
                    arguments->reversecomplement,
                    arguments->showstring,

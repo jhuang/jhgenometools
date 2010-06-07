@@ -525,6 +525,7 @@ typedef struct
                 subjectpos;   /* start position in the subject-sequence */
 } Maximalmatch;
 
+
 /** The following structure stores MUM candidates. That is, maximal matches
   which are unique in the subject-sequence but not necessarily in the
   query sequence. */
