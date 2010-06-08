@@ -18,6 +18,10 @@
 #define MAXMAT4DEF_H
 
 #include "match/matchmode_api.h"
+#include "core/array_api.h"
+#include "core/alphabet_api.h"
+#include "core/encseq_api.h"
+#include "core/defined-types.h"
 
 /*
   This file defines some constants and types for computing maximal 
@@ -33,7 +37,7 @@ typedef struct
 	bool showstring,
        showreversepositions,
        showsequencelengths;
-  GtReadmode queryreadmode;
+  enum GtReadmode queryreadmode;
   GtArray *mumcandtab;
 } Showspecinfo;
 
@@ -50,10 +54,8 @@ typedef struct
   //Preprocessmatchfunction preprocessmatchfunction;
   //Processmatchfunction processmatchfunction;
   //Postprocessmatchfunction postprocessmatchfunction;
-  //Showmatchfunction showmatchfunction;
-  
+  //Showmatchfunction showmatchfunction;  
   const GtEncseq *encseq;
-
   Definedunsignedlong leastlength;
   Showspecinfo *showspecinfo;
 } Matchprocessinfo;

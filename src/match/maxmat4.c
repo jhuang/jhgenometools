@@ -115,20 +115,23 @@ static short int showmatch(const GtEncseq *encseq,
                              unsigned long subjectpos,
                              Showspecinfo *showspecinfo)
 {
-  unsigned long seqnum = gt_encseq_seqnum(encseq, subjectpos);
-  subjectpos = subjectpos - gt_encseq_seqstartpos(encseq, seqnum);
-  unsigned long seqtotalnum = gt_encseq_num_of_sequences(encseq);
-
-  const char *referencedesc;
+  unsigned long seqnum;
+	unsigned long seqtotalnum;
+	const char *referencedesc;
   unsigned long referencedesclength;
+  char *pch;
+
+  seqnum = gt_encseq_seqnum(encseq, subjectpos);
+  subjectpos = subjectpos - gt_encseq_seqstartpos(encseq, seqnum);
+  seqtotalnum = gt_encseq_num_of_sequences(encseq); 
   referencedesc = gt_encseq_description(encseq, &referencedesclength, seqnum);
-  char *pch = strchr(referencedesc,' ');
+  pch = strchr(referencedesc,' ');
   referencedesclength = (unsigned long)(pch-referencedesc);
 
-  if (referencedesc != NULL && referencedesc[0] != '\0' && seqtotalnum!=1)
+  if (referencedesc != NULL && referencedesc[0] != '\0' && seqtotalnum!=(unsigned long)1 )
   {
-    char *buf = gt_calloc(1, sizeof (char) * (referencedesclength +1));
-    (void) strncpy(buf, referencedesc, referencedesclength);
+    char *buf = gt_calloc( (size_t)1, sizeof (char) * (referencedesclength +1));
+    (void) strncpy(buf, referencedesc, (size_t)referencedesclength);
     printf("  %s",buf);
     gt_free(buf);
   }
@@ -220,9 +223,10 @@ static void mumuniqueinquery(Matchprocessinfo *matchprocessinfo,
   //Matchprocessinfo *matchprocessinfo = (Matchprocessinfo *) info;
   if (gt_array_size(matchprocessinfo->showspecinfo->mumcandtab) > 0)
   {
-    unsigned int currentright, dbright = 0;
+    unsigned long currentright, dbright = 0;
     MUMcandidate *mumcandptr;
     bool ignorecurrent, ignoreprevious = false;
+    unsigned long i;
 
     /*
       Sort all MUM-candidates according by increasing subjectpos-value
@@ -230,7 +234,7 @@ static void mumuniqueinquery(Matchprocessinfo *matchprocessinfo,
     */
     gt_array_sort_stable(matchprocessinfo->showspecinfo->mumcandtab,
                          (GtCompare)compareMUMcandidates);
-    int i;
+    
     for (i = 0; i < gt_array_size(matchprocessinfo->showspecinfo->mumcandtab); i++)
     {
       mumcandptr = (MUMcandidate *)gt_array_get(matchprocessinfo->showspecinfo->mumcandtab,i);
@@ -259,14 +263,18 @@ static void mumuniqueinquery(Matchprocessinfo *matchprocessinfo,
             (MUMcandidate *)gt_array_get_first(matchprocessinfo->showspecinfo->mumcandtab))
             && !ignoreprevious)
       {
-        showmatch(matchprocessinfo->encseq,
+        if ( showmatch(matchprocessinfo->encseq,
 								 query,
 								 /* qstart - query = querypos <=> querypos + query = qstart */
 								 (unsigned long) ((mumcandptr-1)->qstart-query),
 								 querylen,
 								 (mumcandptr-1)->mumlength,
 								 (mumcandptr-1)->subjectpos,
-								 matchprocessinfo->showspecinfo);
+								 matchprocessinfo->showspecinfo) != 0 ) 
+				{
+					printf("%s", "error");
+					return;
+				};
       }
       ignoreprevious = ignorecurrent;
     }
@@ -276,13 +284,17 @@ static void mumuniqueinquery(Matchprocessinfo *matchprocessinfo,
     {
       mumcandptr =\
           (MUMcandidate *)gt_array_get_last(matchprocessinfo->showspecinfo->mumcandtab);
-      showmatch(matchprocessinfo->encseq,
+      if ( showmatch(matchprocessinfo->encseq,
 							 query,
 							 (unsigned long) (mumcandptr->qstart-query),
 							 querylen,
 							 mumcandptr->mumlength,
 							 mumcandptr->subjectpos,
-							 matchprocessinfo->showspecinfo);
+							 matchprocessinfo->showspecinfo)  != 0 ) 
+			{
+				printf("%s", "error");
+				return;
+			};
     }
 
   }
@@ -310,12 +322,16 @@ static void matchposinsinglesequence(uint64_t unitnum,
   /* take every suffix of query, qptr is a alias name of qstart */
   for (qptr = query, remaining = querylen; remaining > 0; qptr++, remaining--)
   {		
-    /* hasmatch = */findmatchfunction(
+    if ( !findmatchfunction(
                    query,           /* absolute query start position */
                    qptr,            /* variable position in query */
                    query+querylen,  /* absolute query end position */
                    processmatch,
-                   matchprocessinfo);
+                   matchprocessinfo) )
+    {
+				printf("%s", "error");
+				return;
+		};
   }
 
   //printf ("# size=%lu \n", gt_array_size(matchprocessinfo->showspecinfo->mumcandtab)); 
@@ -354,6 +370,8 @@ int gt_findmum(const GtEncseq *encseq,
   char *querydesc = NULL;
   int retval;
   uint64_t unitnum;
+  GtArray *mumcandtab;
+  char *temp_char;
 
   gt_error_check(err);
   matchprocessinfo.genericindex = genericindex;
@@ -397,7 +415,7 @@ int gt_findmum(const GtEncseq *encseq,
   matchprocessinfo.encseq = encseq;
   matchprocessinfo.showspecinfo = &showspecinfo;
 
-  GtArray *mumcandtab = gt_array_new(sizeof (MUMcandidate));
+  mumcandtab = gt_array_new(sizeof (MUMcandidate));
   matchprocessinfo.leastlength = leastlength;
 
   showspecinfo.showstring = showstring;
@@ -443,11 +461,11 @@ int gt_findmum(const GtEncseq *encseq,
       if ( reversecomplement || bothdirections )
       {
         GtUchar *revcompquery = NULL;
-        revcompquery = gt_calloc(querylen+1, sizeof (GtUchar));
+        revcompquery = gt_calloc((size_t)querylen+1, sizeof (GtUchar));
         /* copy GtUchar from query to revcompquery */
-        memcpy(revcompquery, query, querylen*sizeof (GtUchar));
+        memcpy(revcompquery, query, (size_t)querylen*sizeof(GtUchar));
 
-        char *temp_char = gt_calloc(querylen+1, sizeof (char));
+        temp_char = gt_calloc((size_t)querylen+1, sizeof (char));
         /* transformation from GtUchar to char  (revcomquery --> temp_char) */
         gt_alphabet_decode_seq_to_cstr(alphabet,
                                        temp_char,
@@ -455,7 +473,7 @@ int gt_findmum(const GtEncseq *encseq,
                                        querylen);
 
         /* in situ char-replacement */
-        haserr = gt_reverse_complement(temp_char, querylen, err);
+        haserr = (bool)gt_reverse_complement(temp_char, querylen, err);
         if (haserr)
           break;
 
