@@ -712,7 +712,7 @@ static unsigned long lcp(const GtEncseq *encseq,
 }
 
 /** for option mumreference */
-bool gt_packedindexmumreference(const BWTSeq *bwtSeq,
+bool gt_packedindexmumcandidates(const BWTSeq *bwtSeq,
                                 const GtEncseq *encseq,
                                 /* total length of encseq */
                                 unsigned long totallength,
@@ -723,7 +723,8 @@ bool gt_packedindexmumreference(const BWTSeq *bwtSeq,
                                 const GtUchar *qstart,
                                 /* absolute query end position */
                                 const GtUchar *qend,
-                                GtArray *maximalmatchtab)
+                                Processmatchfunction processmatch,
+                                Showspecinfo *showspecinfo)
 {
   GtUchar cc;
   const GtUchar *qptr;
@@ -770,8 +771,7 @@ bool gt_packedindexmumreference(const BWTSeq *bwtSeq,
      */
     if ( (matchlength >= leastlength) && (bwtbound.start+1 == bwtbound.end) )
     {
-      unsigned long subjectpos =\
-              gt_voidpackedfindfirstmatchconvert((const FMindex *)bwtSeq,
+      unsigned long subjectpos = gt_voidpackedfindfirstmatchconvert((const FMindex *)bwtSeq,
                                                  bwtbound.start,
                                                  matchlength);
 
@@ -791,17 +791,16 @@ bool gt_packedindexmumreference(const BWTSeq *bwtSeq,
         matchlength += additionalmatchlength;
 
         /*
-         * save the result in the dynamic array maximalmatchtab.
-         * actually it is only one record, so that it doesn't need
-         * a dynamic array, but for general catch of the data
-         * in maxmat4.c/function:matchposinsinglesequence with while-loop
-         * from the difference sources => we use a table structure here
+         * save or print the result
          */
-        Maximalmatch maximalmatch;
-        maximalmatch.matchlength = matchlength;
-        maximalmatch.subjectpos = subjectpos;
-        gt_array_add(maximalmatchtab, maximalmatch);
-
+				processmatch(encseq,
+										 query,
+										 (unsigned long) (qstart-query),  /* querypos */
+										 (unsigned long) (qend-query),
+										 matchlength,
+										 subjectpos,
+										 showspecinfo);
+																 
         return true;
       }
     }
@@ -812,17 +811,18 @@ bool gt_packedindexmumreference(const BWTSeq *bwtSeq,
 }
 
 /** for option maxmatch */
-bool gt_packedindexmaxmatch(const BWTSeq *bwtSeq,
-                            const GtEncseq *encseq,
-                            unsigned long totallength,
-                            unsigned long leastlength,
-                            /* absolute query start position */
-                            const GtUchar *query,
-                            /* variable position in query */
-                            const GtUchar *qstart,
-                            /* absolute query end position */
-                            const GtUchar *qend,
-                            GtArray *maximalmatchtab)
+bool gt_packedindexmaxmatches(const BWTSeq *bwtSeq,
+															const GtEncseq *encseq,
+															unsigned long totallength,
+															unsigned long leastlength,
+															/* absolute query start position */
+															const GtUchar *query,
+															/* variable position in query */
+															const GtUchar *qstart,
+															/* absolute query end position */
+															const GtUchar *qend,
+															Processmatchfunction processmatch,
+															Showspecinfo *showspecinfo)
 {
   GtUchar cc;
   const GtUchar *qptr;
@@ -892,12 +892,15 @@ bool gt_packedindexmaxmatch(const BWTSeq *bwtSeq,
           matchlengththisline += additionalmatchlengththisline;
 
           /*
-           * save the result in the dynamic array maximalmatchtab.
+           * print the result
            */
-          Maximalmatch maximalmatch;
-          maximalmatch.matchlength = matchlengththisline;
-          maximalmatch.subjectpos = subjectposthisline;
-          gt_array_add(maximalmatchtab, maximalmatch);
+          processmatch(encseq,
+											 query,
+											 (unsigned long) (qstart-query),  /* querypos */
+											 (unsigned long) (qend-query),
+											 matchlengththisline,
+											 subjectposthisline,
+											 showspecinfo);
         }
       }
       return true;

@@ -35,6 +35,7 @@
 #include "core/encseq.h"
 #include "match/matchmode_api.h"
 #include "core/defined-types.h"
+#include "match/maxmat4def.h"
 //#include <stdbool.h>
 
 /* TODO:
@@ -517,25 +518,6 @@ unsigned long gt_packedindexmstatsforward(const BWTSeq *bwtseq,
                                        const GtUchar *qstart,
                                        const GtUchar *qend);
 
-/** The following structure stores maximal matches.
-  It could be type mum candidate or type maxmatch. */
-typedef struct
-{
-  unsigned long matchlength,  /* length of the mum */
-                subjectpos;   /* start position in the subject-sequence */
-} Maximalmatch;
-
-
-/** The following structure stores MUM candidates. That is, maximal matches
-  which are unique in the subject-sequence but not necessarily in the
-  query sequence. */
-typedef struct
-{
-  unsigned long mumlength,    /* length of the mum */
-                subjectpos;   /* start position in the subject-sequence */
-  const GtUchar *qstart;      /* start position in the query sequence */
-} MUMcandidate;
-
 /**
  * @brief for packed index (given as void pointer), compute MUM-candidate
  * in range between qstart and qend. The MUM-candidate must longer than
@@ -552,14 +534,15 @@ typedef struct
  * @param dynamic array save the computed result
  * @return true if there is a result, false if no result is saved
  */
-bool gt_packedindexmumreference(const BWTSeq *bwtSeq,
+bool gt_packedindexmumcandidates(const BWTSeq *bwtSeq,
                                 const GtEncseq *encseq,
                                 unsigned long totallength,
                                 unsigned long leastlength,
                                 const GtUchar *query,
                                 const GtUchar *qstart,
                                 const GtUchar *qend,
-                                GtArray *maximalmatchtab);
+                                Processmatchfunction processmatch,
+                                Showspecinfo *showspecinfo);
 
 /**
  * @brief for packed index (given as void pointer), compute all maximal
@@ -577,14 +560,15 @@ bool gt_packedindexmumreference(const BWTSeq *bwtSeq,
  * @param dynamic array save the computed results
  * @return true if there are results, false if no result is saved
  */
-bool gt_packedindexmaxmatch(const BWTSeq *bwtSeq,
-                                const GtEncseq *encseq,
-                                unsigned long totallength,
-                                unsigned long leastlength,
-                                const GtUchar *query,
-                                const GtUchar *qstart,
-                                const GtUchar *qend,
-                                GtArray *maximalmatchtab);
+bool gt_packedindexmaxmatches(const BWTSeq *bwtSeq,
+															const GtEncseq *encseq,
+															unsigned long totallength,
+															unsigned long leastlength,
+															const GtUchar *query,
+															const GtUchar *qstart,
+															const GtUchar *qend,
+															Processmatchfunction processmatch,
+															Showspecinfo *showspecinfo);
 
 #include "match/eis-bwtseq-siop.h"
 

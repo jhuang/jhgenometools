@@ -24,6 +24,8 @@
 #include "splititv.h"
 #include "procmatch.h"
 
+#include "match/maxmat4def.h"
+
 /* The following type is just used to stronlgy type the functions
    using the FMindex (rather than using void pointers) */
 
@@ -165,4 +167,17 @@ unsigned long gt_pck_get_nonspecial_count(const FMindex *index);
 /* returns occurrences of special chars in the intervals of non special chars,
  * that is the number of rows that would be extended with a special. */
 unsigned long gt_pck_special_occ_in_nonspecial_intervals(const FMindex *index);
+
+bool gt_voidpackedindexmumcandidates(const GtUchar *query,
+																		const GtUchar *qstart,
+																		const GtUchar *qend,
+																		Processmatchfunction processmatch,
+																		Matchprocessinfo *info);
+
+bool gt_voidpackedindexmaxmatches(const GtUchar *query,
+																	const GtUchar *qstart,
+																	const GtUchar *qend,
+																	Processmatchfunction processmatch,
+																	Matchprocessinfo *info);
+
 #endif
