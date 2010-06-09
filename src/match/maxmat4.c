@@ -23,15 +23,15 @@
 #include "match/maxmat4def.h"
 
 /*
-  This file contains functions to appropriately call the function 
+  This file contains functions to appropriately call the function
   gt_voidpackedindexmumreference and gt_voidpackedindexmaxmatch
   and to process their result according to the options given by the user.
 */
 
-/* 
+/*
   The following structure stores MUM candidates. That is, maximal matches
   which are unique in the subject-sequence but not necessarily in the
-  query sequence. 
+  query sequence.
 */
 typedef struct
 {
@@ -39,35 +39,35 @@ typedef struct
                 subjectpos;   /* start position in the subject-sequence */
   const GtUchar *qstart;      /* start position in the query sequence */
 } MUMcandidate;
-                                                                       
+
 /*
   The following is the type for the functions to finding maximal matches or
   MUM candidates.
 */
 typedef bool (*Findmatchfunction)(const GtUchar *query,
-																		const GtUchar *qstart,
-																		const GtUchar *qend,
-																		Processmatchfunction processmatch,
-																		Matchprocessinfo *info);
-                                     
+                                    const GtUchar *qstart,
+                                    const GtUchar *qend,
+                                    Processmatchfunction processmatch,
+                                    Matchprocessinfo *info);
+
 /*
   The following function is imported from eis-voiditf.h
 */
 bool gt_voidpackedindexmumcandidates(const GtUchar *query,
-																		const GtUchar *qstart,
-																		const GtUchar *qend,
-																		Processmatchfunction processmatch,
-																		Matchprocessinfo *info);
+                                    const GtUchar *qstart,
+                                    const GtUchar *qend,
+                                    Processmatchfunction processmatch,
+                                    Matchprocessinfo *info);
 
 /*
   The following function is imported from eis-voiditf.h
 */
 bool gt_voidpackedindexmaxmatches(const GtUchar *query,
-																	const GtUchar *qstart,
-																	const GtUchar *qend,
-																	Processmatchfunction processmatch,
-																	Matchprocessinfo *info);
-																          
+                                  const GtUchar *qstart,
+                                  const GtUchar *qend,
+                                  Processmatchfunction processmatch,
+                                  Matchprocessinfo *info);
+
 /*
   The following function shows the query sequence description of sequence
   number 'unitnum'.
@@ -77,7 +77,6 @@ static void showquerydesc(GT_UNUSED uint64_t unitnum,
                         const char *querydesc,
                         Showspecinfo *showspecinfo)
 {
-  //Showspecinfo *showspecinfo = (Showspecinfo *) info;
   /* printf("unit " Formatuint64_t, PRINTuint64_tcast(unitnum)); */
   if (querydesc != NULL && querydesc[0] != '\0')
   {
@@ -99,7 +98,7 @@ static void showquerydesc(GT_UNUSED uint64_t unitnum,
     }
   }
   printf("\n");
-}  
+}
 
 /*
   The following is a function to further process mum-candidate,
@@ -116,19 +115,20 @@ static short int showmatch(const GtEncseq *encseq,
                              Showspecinfo *showspecinfo)
 {
   unsigned long seqnum;
-	unsigned long seqtotalnum;
-	const char *referencedesc;
+  unsigned long seqtotalnum;
+  const char *referencedesc;
   unsigned long referencedesclength;
   char *pch;
 
   seqnum = gt_encseq_seqnum(encseq, subjectpos);
   subjectpos = subjectpos - gt_encseq_seqstartpos(encseq, seqnum);
-  seqtotalnum = gt_encseq_num_of_sequences(encseq); 
+  seqtotalnum = gt_encseq_num_of_sequences(encseq);
   referencedesc = gt_encseq_description(encseq, &referencedesclength, seqnum);
   pch = strchr(referencedesc,' ');
   referencedesclength = (unsigned long)(pch-referencedesc);
 
-  if (referencedesc != NULL && referencedesc[0] != '\0' && seqtotalnum!=(unsigned long)1 )
+  if (referencedesc != NULL && referencedesc[0] != '\0'
+                             && seqtotalnum!=(unsigned long)1 )
   {
     char *buf = gt_calloc( (size_t)1, sizeof (char) * (referencedesclength +1));
     (void) strncpy(buf, referencedesc, (size_t)referencedesclength);
@@ -166,27 +166,18 @@ static short int showmatch(const GtEncseq *encseq,
   The following function stores the information about a MUM-candidate
   in the next free position of the dynamic array mumcandtab.
 */
-static short int storeMUMcandidate (GT_UNUSED const GtEncseq *encseq,
-																	 const GtUchar *query,
-																	 unsigned long querypos,
-																	 GT_UNUSED unsigned long querylength,
-																	 unsigned long matchlength,
-																	 unsigned long subjectpos,
-																	 Showspecinfo *showspecinfo)
+static short int storemumcandidate (GT_UNUSED const GtEncseq *encseq,
+                                   const GtUchar *query,
+                                   unsigned long querypos,
+                                   GT_UNUSED unsigned long querylength,
+                                   unsigned long matchlength,
+                                   unsigned long subjectpos,
+                                   Showspecinfo *showspecinfo)
 {
-  //Matchprocessinfo *matchprocessinfo = (Matchprocessinfo *) info;
-
-	/*
-		printf("storeMUMcandiate %lu %lu %lu\n",
-							matchlength,
-							subjectpos,
-							//seqnum,
-							query);
-	*/
-	/*
-	 * save the result in the dynamic array mumcandtab.
-	 */
-	MUMcandidate mumcand;;
+  /*
+   * save the result in the dynamic array mumcandtab.
+   */
+  MUMcandidate mumcand;;
   mumcand.mumlength = matchlength;
   mumcand.subjectpos = subjectpos;
   /*mumcand.queryseq = unitnum;*/
@@ -194,7 +185,7 @@ static short int storeMUMcandidate (GT_UNUSED const GtEncseq *encseq,
   gt_array_add(showspecinfo->mumcandtab, mumcand);
   return 0;
 }
-                                   
+
 /*
   The following function compares two MUM-candidates. The MUM-candidate
   with smaller subjectpos-value comes first.
@@ -220,7 +211,6 @@ static void mumuniqueinquery(Matchprocessinfo *matchprocessinfo,
                              const GtUchar *query,
                              unsigned long querylen)
 {
-  //Matchprocessinfo *matchprocessinfo = (Matchprocessinfo *) info;
   if (gt_array_size(matchprocessinfo->showspecinfo->mumcandtab) > 0)
   {
     unsigned long currentright, dbright = 0;
@@ -234,10 +224,13 @@ static void mumuniqueinquery(Matchprocessinfo *matchprocessinfo,
     */
     gt_array_sort_stable(matchprocessinfo->showspecinfo->mumcandtab,
                          (GtCompare)compareMUMcandidates);
-    
-    for (i = 0; i < gt_array_size(matchprocessinfo->showspecinfo->mumcandtab); i++)
+
+    for (i = 0;
+         i < gt_array_size(matchprocessinfo->showspecinfo->mumcandtab);
+         i++)
     {
-      mumcandptr = (MUMcandidate *)gt_array_get(matchprocessinfo->showspecinfo->mumcandtab,i);
+      mumcandptr = (MUMcandidate *)\
+             gt_array_get(matchprocessinfo->showspecinfo->mumcandtab,i);
 
       ignorecurrent = false;
       currentright = mumcandptr->subjectpos + mumcandptr->mumlength - 1;
@@ -259,22 +252,22 @@ static void mumuniqueinquery(Matchprocessinfo *matchprocessinfo,
           dbright = currentright;
         }
       }
-      if ( (mumcandptr>\
-            (MUMcandidate *)gt_array_get_first(matchprocessinfo->showspecinfo->mumcandtab))
+      if ( (mumcandptr>(MUMcandidate *)gt_array_get_first(\
+                            matchprocessinfo->showspecinfo->mumcandtab))
             && !ignoreprevious)
       {
         if ( showmatch(matchprocessinfo->encseq,
-								 query,
-								 /* qstart - query = querypos <=> querypos + query = qstart */
-								 (unsigned long) ((mumcandptr-1)->qstart-query),
-								 querylen,
-								 (mumcandptr-1)->mumlength,
-								 (mumcandptr-1)->subjectpos,
-								 matchprocessinfo->showspecinfo) != 0 ) 
-				{
-					printf("%s", "error");
-					return;
-				};
+                 query,
+                 /* qstart - query = querypos <=> querypos + query = qstart */
+                 (unsigned long) ((mumcandptr-1)->qstart-query),
+                 querylen,
+                 (mumcandptr-1)->mumlength,
+                 (mumcandptr-1)->subjectpos,
+                 matchprocessinfo->showspecinfo) != 0 )
+        {
+          printf("%s", "error");
+          return;
+        };
       }
       ignoreprevious = ignorecurrent;
     }
@@ -282,19 +275,19 @@ static void mumuniqueinquery(Matchprocessinfo *matchprocessinfo,
     /* the last one */
     if (!ignoreprevious)
     {
-      mumcandptr =\
-          (MUMcandidate *)gt_array_get_last(matchprocessinfo->showspecinfo->mumcandtab);
+      mumcandptr = (MUMcandidate *)gt_array_get_last(\
+                            matchprocessinfo->showspecinfo->mumcandtab);
       if ( showmatch(matchprocessinfo->encseq,
-							 query,
-							 (unsigned long) (mumcandptr->qstart-query),
-							 querylen,
-							 mumcandptr->mumlength,
-							 mumcandptr->subjectpos,
-							 matchprocessinfo->showspecinfo)  != 0 ) 
-			{
-				printf("%s", "error");
-				return;
-			};
+               query,
+               (unsigned long) (mumcandptr->qstart-query),
+               querylen,
+               mumcandptr->mumlength,
+               mumcandptr->subjectpos,
+               matchprocessinfo->showspecinfo)  != 0 )
+      {
+        printf("%s", "error");
+        return;
+      };
     }
 
   }
@@ -310,18 +303,16 @@ static void matchposinsinglesequence(uint64_t unitnum,
 {
   const GtUchar *qptr;
   unsigned long remaining;
-  //unsigned long subjectpos;
-  //bool hasmatch;
 
   /* for every query, show its description at the beginning */
   showquerydesc(unitnum,
-								querylen,
-								querydesc,
-								matchprocessinfo->showspecinfo);
+                querylen,
+                querydesc,
+                matchprocessinfo->showspecinfo);
 
   /* take every suffix of query, qptr is a alias name of qstart */
   for (qptr = query, remaining = querylen; remaining > 0; qptr++, remaining--)
-  {		
+  {
     if ( !findmatchfunction(
                    query,           /* absolute query start position */
                    qptr,            /* variable position in query */
@@ -329,35 +320,34 @@ static void matchposinsinglesequence(uint64_t unitnum,
                    processmatch,
                    matchprocessinfo) )
     {
-				printf("%s", "error");
-				return;
-		};
+        printf("%s", "error");
+        return;
+    };
   }
 
-  //printf ("# size=%lu \n", gt_array_size(matchprocessinfo->showspecinfo->mumcandtab)); 
   if (matchprocessinfo->matchmode == GT_MATCHMODE_MUM)
   {
       mumuniqueinquery(matchprocessinfo,
-											query,
-											querylen);
+                      query,
+                      querylen);
       gt_array_reset(matchprocessinfo->showspecinfo->mumcandtab);
   }
 }
 
 int gt_findmum(const GtEncseq *encseq,
-								const void *genericindex,
-								unsigned long totallength,
-								const GtAlphabet *alphabet,
-								const GtStrArray *queryfilenames,
-								const GtMatchmode matchmode,
-								Definedunsignedlong leastlength,
-								bool bothdirections,
-								bool reversecomplement,
-								bool showstring,
-								bool showreversepositions,
-								bool showsequencelengths,
-								GT_UNUSED bool verbose,
-								GtError *err)
+                const void *genericindex,
+                unsigned long totallength,
+                const GtAlphabet *alphabet,
+                const GtStrArray *queryfilenames,
+                const GtMatchmode matchmode,
+                Definedunsignedlong leastlength,
+                bool bothdirections,
+                bool reversecomplement,
+                bool showstring,
+                bool showreversepositions,
+                bool showsequencelengths,
+                GT_UNUSED bool verbose,
+                GtError *err)
 {
   Matchprocessinfo matchprocessinfo;
   Showspecinfo showspecinfo;
@@ -378,28 +368,11 @@ int gt_findmum(const GtEncseq *encseq,
   matchprocessinfo.totallength = totallength;
   matchprocessinfo.matchmode = matchmode;
 
-  //  preprocessmatchfunction = showquerydesc;
-  //if (matchprocessinfo.matchmode == GT_MATCHMODE_MUM)
-  //{
-    //matchprocessinfo.processmatchfunction = gt_voidpackedindexmumreference;
-    //matchprocessinfo.postprocessmatchfunction = mumuniqueinquery;
-  //}
-  //else if (matchprocessinfo.matchmode == GT_MATCHMODE_MUMREFERENCE)
-  //{
-    //matchprocessinfo.processmatchfunction = gt_voidpackedindexmumreference;
-    //matchprocessinfo.postprocessmatchfunction = NULL;
-  //}
-  //else if (matchprocessinfo.matchmode == GT_MATCHMODE_MAXMATCH)
-  //{
-    //matchprocessinfo.processmatchfunction = gt_voidpackedindexmaxmatch;
-    //matchprocessinfo.postprocessmatchfunction = NULL;
-  //}
-  //matchprocessinfo.showmatchfunction = showmaximalmatch;
-  if(matchprocessinfo.matchmode == GT_MATCHMODE_MUM)
+  if (matchprocessinfo.matchmode == GT_MATCHMODE_MUM)
   {
     findmatchfunction = gt_voidpackedindexmumcandidates;
-    processmatch = storeMUMcandidate;
-	}
+    processmatch = storemumcandidate;
+  }
   else if (matchprocessinfo.matchmode == GT_MATCHMODE_MUMREFERENCE)
   {
     findmatchfunction = gt_voidpackedindexmumcandidates;
@@ -407,9 +380,9 @@ int gt_findmum(const GtEncseq *encseq,
   }
   else if (matchprocessinfo.matchmode == GT_MATCHMODE_MAXMATCH)
   {
-		findmatchfunction = gt_voidpackedindexmaxmatches;
+    findmatchfunction = gt_voidpackedindexmaxmatches;
     processmatch = showmatch;
-	}
+  }
 
   matchprocessinfo.alphabet = alphabet;
   matchprocessinfo.encseq = encseq;
@@ -463,7 +436,7 @@ int gt_findmum(const GtEncseq *encseq,
         GtUchar *revcompquery = NULL;
         revcompquery = gt_calloc((size_t)querylen+1, sizeof (GtUchar));
         /* copy GtUchar from query to revcompquery */
-        memcpy(revcompquery, query, (size_t)querylen*sizeof(GtUchar));
+        memcpy(revcompquery, query, (size_t)querylen*sizeof (GtUchar));
 
         temp_char = gt_calloc((size_t)querylen+1, sizeof (char));
         /* transformation from GtUchar to char  (revcomquery --> temp_char) */

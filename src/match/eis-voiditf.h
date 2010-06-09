@@ -169,15 +169,15 @@ unsigned long gt_pck_get_nonspecial_count(const FMindex *index);
 unsigned long gt_pck_special_occ_in_nonspecial_intervals(const FMindex *index);
 
 bool gt_voidpackedindexmumcandidates(const GtUchar *query,
-																		const GtUchar *qstart,
-																		const GtUchar *qend,
-																		Processmatchfunction processmatch,
-																		Matchprocessinfo *info);
+                                    const GtUchar *qstart,
+                                    const GtUchar *qend,
+                                    Processmatchfunction processmatch,
+                                    Matchprocessinfo *info);
 
 bool gt_voidpackedindexmaxmatches(const GtUchar *query,
-																	const GtUchar *qstart,
-																	const GtUchar *qend,
-																	Processmatchfunction processmatch,
-																	Matchprocessinfo *info);
+                                  const GtUchar *qstart,
+                                  const GtUchar *qend,
+                                  Processmatchfunction processmatch,
+                                  Matchprocessinfo *info);
 
 #endif

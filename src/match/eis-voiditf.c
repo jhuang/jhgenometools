@@ -578,35 +578,35 @@ unsigned long gt_pck_special_occ_in_nonspecial_intervals(const FMindex *index)
 }
 
 bool gt_voidpackedindexmumcandidates(const GtUchar *query,
-																		const GtUchar *qstart,
-																		const GtUchar *qend,
-																		Processmatchfunction processmatch,
-																		Matchprocessinfo *info)
+                                    const GtUchar *qstart,
+                                    const GtUchar *qend,
+                                    Processmatchfunction processmatch,
+                                    Matchprocessinfo *info)
 {
-	return gt_packedindexmumcandidates((const BWTSeq *)info->genericindex,
-																			info->encseq,
-																			info->totallength,
-																			(info->leastlength).valueunsignedlong,
-																			query,
-																			qstart,
-																			qend,
-																			processmatch,
-																			info->showspecinfo);
+  return gt_packedindexmumcandidates((const BWTSeq *)info->genericindex,
+                                      info->encseq,
+                                      info->totallength,
+                                      (info->leastlength).valueunsignedlong,
+                                      query,
+                                      qstart,
+                                      qend,
+                                      processmatch,
+                                      info->showspecinfo);
 }
 
 bool gt_voidpackedindexmaxmatches(const GtUchar *query,
-																	const GtUchar *qstart,
-																	const GtUchar *qend,
-																	Processmatchfunction processmatch,
-																	Matchprocessinfo *info)
+                                  const GtUchar *qstart,
+                                  const GtUchar *qend,
+                                  Processmatchfunction processmatch,
+                                  Matchprocessinfo *info)
 {
-	return gt_packedindexmaxmatches((const BWTSeq *) info->genericindex,
-																	info->encseq,
-																	info->totallength,
-																	(info->leastlength).valueunsignedlong,
-																	query,
-																	qstart,
-																	qend,
-																	processmatch,
-																	info->showspecinfo);
+  return gt_packedindexmaxmatches((const BWTSeq *) info->genericindex,
+                                  info->encseq,
+                                  info->totallength,
+                                  (info->leastlength).valueunsignedlong,
+                                  query,
+                                  qstart,
+                                  qend,
+                                  processmatch,
+                                  info->showspecinfo);
 }

@@ -235,7 +235,7 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   if (!haserr)
   {
     /* set match mode */
-    enum GtMatchmode matchmode = GT_MATCHMODE_MUMREFERENCE;
+    GtMatchmode matchmode = GT_MATCHMODE_MUMREFERENCE;
     if (arguments->mum)
     {
       matchmode = GT_MATCHMODE_MUM;

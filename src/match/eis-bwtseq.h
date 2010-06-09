@@ -531,8 +531,11 @@ unsigned long gt_packedindexmstatsforward(const BWTSeq *bwtseq,
  * @param query points to memory area where whole query is absolut started
  * @param qstart points to memory area where query is found
  * @param qend points to memory area immediately after the query
- * @param dynamic array save the computed result
- * @return true if there is a result, false if no result is saved
+ * @param callback function, it save or print the computed results
+ * @param structure contains all information specified for the callback
+ * function showmatch and storemumcandidate
+ * @return true if the computed result is correct printed (option mumreference)
+ * or saved (option mum), false if the process cannot be correct finished.
  */
 bool gt_packedindexmumcandidates(const BWTSeq *bwtSeq,
                                 const GtEncseq *encseq,
@@ -557,18 +560,22 @@ bool gt_packedindexmumcandidates(const BWTSeq *bwtSeq,
  * @param query points to memory area where whole query is absolut started
  * @param qstart points to memory area where query is found
  * @param qend points to memory area immediately after the query
- * @param dynamic array save the computed results
+ * @param callback function, it save or print the computed results
+ * @param structure contains all information specified for the callback
+ * function showmatch
+ * @return true if the computed results are correct printed (option maxmatch),
+ * false if the process cannot be correct finished.
  * @return true if there are results, false if no result is saved
  */
 bool gt_packedindexmaxmatches(const BWTSeq *bwtSeq,
-															const GtEncseq *encseq,
-															unsigned long totallength,
-															unsigned long leastlength,
-															const GtUchar *query,
-															const GtUchar *qstart,
-															const GtUchar *qend,
-															Processmatchfunction processmatch,
-															Showspecinfo *showspecinfo);
+                              const GtEncseq *encseq,
+                              unsigned long totallength,
+                              unsigned long leastlength,
+                              const GtUchar *query,
+                              const GtUchar *qstart,
+                              const GtUchar *qend,
+                              Processmatchfunction processmatch,
+                              Showspecinfo *showspecinfo);
 
 #include "match/eis-bwtseq-siop.h"
 

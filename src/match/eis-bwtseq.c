@@ -771,7 +771,8 @@ bool gt_packedindexmumcandidates(const BWTSeq *bwtSeq,
      */
     if ( (matchlength >= leastlength) && (bwtbound.start+1 == bwtbound.end) )
     {
-      unsigned long subjectpos = gt_voidpackedfindfirstmatchconvert((const FMindex *)bwtSeq,
+      unsigned long subjectpos = gt_voidpackedfindfirstmatchconvert(
+                                                 (const FMindex *)bwtSeq,
                                                  bwtbound.start,
                                                  matchlength);
 
@@ -791,16 +792,16 @@ bool gt_packedindexmumcandidates(const BWTSeq *bwtSeq,
         matchlength += additionalmatchlength;
 
         /*
-         * save or print the result
+         * print or save the result
          */
-				processmatch(encseq,
-										 query,
-										 (unsigned long) (qstart-query),  /* querypos */
-										 (unsigned long) (qend-query),
-										 matchlength,
-										 subjectpos,
-										 showspecinfo);
-																 
+        processmatch(encseq,
+                     query,
+                     (unsigned long) (qstart-query),  /* querypos */
+                     (unsigned long) (qend-query),
+                     matchlength,
+                     subjectpos,
+                     showspecinfo);
+
         return true;
       }
     }
@@ -812,17 +813,17 @@ bool gt_packedindexmumcandidates(const BWTSeq *bwtSeq,
 
 /** for option maxmatch */
 bool gt_packedindexmaxmatches(const BWTSeq *bwtSeq,
-															const GtEncseq *encseq,
-															unsigned long totallength,
-															unsigned long leastlength,
-															/* absolute query start position */
-															const GtUchar *query,
-															/* variable position in query */
-															const GtUchar *qstart,
-															/* absolute query end position */
-															const GtUchar *qend,
-															Processmatchfunction processmatch,
-															Showspecinfo *showspecinfo)
+                              const GtEncseq *encseq,
+                              unsigned long totallength,
+                              unsigned long leastlength,
+                              /* absolute query start position */
+                              const GtUchar *query,
+                              /* variable position in query */
+                              const GtUchar *qstart,
+                              /* absolute query end position */
+                              const GtUchar *qend,
+                              Processmatchfunction processmatch,
+                              Showspecinfo *showspecinfo)
 {
   GtUchar cc;
   const GtUchar *qptr;
@@ -895,12 +896,12 @@ bool gt_packedindexmaxmatches(const BWTSeq *bwtSeq,
            * print the result
            */
           processmatch(encseq,
-											 query,
-											 (unsigned long) (qstart-query),  /* querypos */
-											 (unsigned long) (qend-query),
-											 matchlengththisline,
-											 subjectposthisline,
-											 showspecinfo);
+                       query,
+                       (unsigned long) (qstart-query),  /* querypos */
+                       (unsigned long) (qend-query),
+                       matchlengththisline,
+                       subjectposthisline,
+                       showspecinfo);
         }
       }
       return true;
