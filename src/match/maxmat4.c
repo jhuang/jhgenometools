@@ -320,8 +320,7 @@ static void matchposinsinglesequence(uint64_t unitnum,
                    processmatch,
                    matchprocessinfo) )
     {
-        printf("%s", "error");
-        return;
+      continue; 
     };
   }
 
