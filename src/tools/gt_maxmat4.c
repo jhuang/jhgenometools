@@ -28,6 +28,7 @@ typedef struct {
        reversecomplement,                    /* onlyreversecomplementmatches */
        showstring,                           /* showstring */
        showreversepositions,                 /* showreversepositions */
+       fourcolumn,                           /* is option -F on? */
        showsequencelengths;                  /* showsequencelengths */
   Definedunsignedlong leastlength;           /* leastlength */
   bool verbose;
@@ -53,8 +54,8 @@ static void gt_maxmat4_arguments_delete(void *tool_arguments)
 static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
 {
   GtMaxmat4Arguments *arguments = (GtMaxmat4Arguments*)tool_arguments;
-  GtOption *option_mum, *option_mumreference, *option_maxmatch,
-           *option_l,*option_b, *option_r, *option_s, *option_c, *option_L;
+  GtOption *option_mum, *option_mumreference, *option_maxmatch, *option_l,
+           *option_b, *option_r, *option_s, *option_c, *option_F, *option_L;
   GtOptionParser *op;
 
   gt_assert(arguments);
@@ -64,7 +65,7 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
       "Find and output (to stdout) the positions and length of all "
       "sufficiently long (unique) maximal matches of a substring in "
       "<reference-file>(in format of specify packed index) and <query-file>. "
-      "match only the characters a, c, g, or t, "
+      "Match only the characters a, c, g, or t, "
       "they can be in upper or in lower case.");
   gt_option_parser_set_mailaddress(op,"<gt-users@genometools.org>");
 
@@ -123,10 +124,16 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
       &arguments->showreversepositions, false);
   gt_option_parser_add_option(op, option_c);
 
+  /* -F for fourcolumn */
+  option_F = gt_option_new_bool("F",
+      "Force 4 column output format that prepends every match line with "
+      "the reference sequence identifier",
+      &arguments->fourcolumn, false);
+  gt_option_parser_add_option(op, option_F);
+
   /* -L for showsequencelengths */
   option_L = gt_option_new_bool("L",
-      "show the length of the reference sequences and query sequences "
-      "on the header line",
+      "show the length of the query sequence on the header line",
       &arguments->showsequencelengths, false);
   gt_option_parser_add_option(op, option_L);
 
@@ -260,6 +267,7 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
                    arguments->reversecomplement,
                    arguments->showstring,
                    arguments->showreversepositions,
+                   arguments->fourcolumn,
                    arguments->showsequencelengths,
                    arguments->verbose,
                    err) != 0)

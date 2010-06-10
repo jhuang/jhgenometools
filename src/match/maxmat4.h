@@ -32,6 +32,7 @@ int gt_findmum(const GtEncseq *encseq,
                bool reversecomplement,
                bool showstring,
                bool showreversepositions,
+               bool fourcolumn,
                bool showsequencelengths,
                bool verbose,
                GtError *err);

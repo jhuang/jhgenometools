@@ -32,6 +32,7 @@ typedef struct
 {
   bool showstring,
        showreversepositions,
+       fourcolumn,
        showsequencelengths;
   GtReadmode queryreadmode;
   GtArray *mumcandtab;

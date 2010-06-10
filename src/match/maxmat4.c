@@ -128,37 +128,45 @@ static short int showmatch(const GtEncseq *encseq,
   referencedesclength = (unsigned long)(pch-referencedesc);
 
   if (referencedesc != NULL && referencedesc[0] != '\0'
-                             && seqtotalnum!=(unsigned long)1 )
+      && seqtotalnum!=(unsigned long)1 && !showspecinfo->fourcolumn )
   {
     char *buf = gt_calloc( (size_t)1, sizeof (char) * (referencedesclength +1));
     (void) strncpy(buf, referencedesc, (size_t)referencedesclength);
     printf("  %s",buf);
     gt_free(buf);
   }
-
-  printf("   %8lu  ",subjectpos+1);
+  printf("%10lu",subjectpos+1);
   if (showspecinfo->showreversepositions)
   {
     if (showspecinfo->queryreadmode==GT_READMODE_REVCOMPL)
     {
-      printf("%8lu  ",querylength-querypos);
+      printf("%10lu",querylength-querypos);
     }
     else
     {
-      printf("%8lu  ",querypos+1);
+      printf("%10lu",querypos+1);
     }
   }
   else
   {
-    printf("%8lu  ",querypos+1);
+    printf("%10lu",querypos+1);
   }
-  printf("%8lu\n",matchlength);
-  if (showspecinfo->showstring)
+  printf("%10lu",matchlength);
+  if (showspecinfo->fourcolumn)
   {
-    gt_alphabet_decode_seq_to_fp(gt_encseq_alphabet(encseq),stdout,
-                                 query + querypos,matchlength);
-    (void) putchar('\n');
+    printf("%10lu\n",seqnum);
   }
+  else
+  {
+    (void) putchar('\n');
+    if (showspecinfo->showstring)
+    {
+      gt_alphabet_decode_seq_to_fp(gt_encseq_alphabet(encseq),stdout,
+                                   query + querypos,matchlength);
+      (void) putchar('\n');
+    }
+  }
+
   return 0;
 }
 
@@ -320,7 +328,7 @@ static void matchposinsinglesequence(uint64_t unitnum,
                    processmatch,
                    matchprocessinfo) )
     {
-      continue; 
+      continue;
     };
   }
 
@@ -344,6 +352,7 @@ int gt_findmum(const GtEncseq *encseq,
                 bool reversecomplement,
                 bool showstring,
                 bool showreversepositions,
+                bool fourcolumn,
                 bool showsequencelengths,
                 GT_UNUSED bool verbose,
                 GtError *err)
@@ -392,6 +401,7 @@ int gt_findmum(const GtEncseq *encseq,
 
   showspecinfo.showstring = showstring;
   showspecinfo.showreversepositions = showreversepositions;
+  showspecinfo.fourcolumn = fourcolumn;
   showspecinfo.showsequencelengths = showsequencelengths;
   showspecinfo.mumcandtab = mumcandtab;
 
