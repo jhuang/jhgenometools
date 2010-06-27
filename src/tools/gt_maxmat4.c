@@ -126,7 +126,7 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
 
   /* -F for fourcolumn */
   option_F = gt_option_new_bool("F",
-      "Force 4 column output format that prepends every match line with "
+      "force 4 column output format that prepends every match line with "
       "the reference sequence identifier",
       &arguments->fourcolumn, false);
   gt_option_parser_add_option(op, option_F);

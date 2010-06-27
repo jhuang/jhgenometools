@@ -159,14 +159,14 @@ static short int showmatch(const GtEncseq *encseq,
   else
   {
     (void) putchar('\n');
-    if (showspecinfo->showstring)
-    {
-      gt_alphabet_decode_seq_to_fp(gt_encseq_alphabet(encseq),stdout,
-                                   query + querypos,matchlength);
-      (void) putchar('\n');
-    }
   }
 
+  if (showspecinfo->showstring)
+  {
+    gt_alphabet_decode_seq_to_fp(gt_encseq_alphabet(encseq),stdout,
+                                 query + querypos,matchlength);
+    (void) putchar('\n');
+  }
   return 0;
 }
 
