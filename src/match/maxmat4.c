@@ -75,7 +75,8 @@ bool gt_voidpackedindexmaxmatches(const GtUchar *query,
 static void showquerydesc(GT_UNUSED uint64_t unitnum,
                         unsigned long querylen,
                         const char *querydesc,
-                        Showspecinfo *showspecinfo)
+                        Showspecinfo *showspecinfo,
+                        GT_UNUSED GtError *err)
 {
   /* printf("unit " Formatuint64_t, PRINTuint64_tcast(unitnum)); */
   if (querydesc != NULL && querydesc[0] != '\0')
@@ -112,7 +113,8 @@ static short int showmatch(const GtEncseq *encseq,
                              unsigned long querylength,
                              unsigned long matchlength,
                              unsigned long subjectpos,
-                             Showspecinfo *showspecinfo)
+                             Showspecinfo *showspecinfo
+                             /*GT_UNUSED GtError *err*/)
 {
   unsigned long seqnum;
   unsigned long seqtotalnum;
@@ -180,7 +182,8 @@ static short int storemumcandidate (GT_UNUSED const GtEncseq *encseq,
                                    GT_UNUSED unsigned long querylength,
                                    unsigned long matchlength,
                                    unsigned long subjectpos,
-                                   Showspecinfo *showspecinfo)
+                                   Showspecinfo *showspecinfo
+                                   /*GT_UNUSED GtError *err*/)
 {
   /*
    * save the result in the dynamic array mumcandtab.
@@ -217,7 +220,8 @@ static int compareMUMcandidates(MUMcandidate *p,MUMcandidate *q)
 */
 static void mumuniqueinquery(Matchprocessinfo *matchprocessinfo,
                              const GtUchar *query,
-                             unsigned long querylen)
+                             unsigned long querylen,
+                             GtError *err)
 {
   if (gt_array_size(matchprocessinfo->showspecinfo->mumcandtab) > 0)
   {
@@ -273,7 +277,7 @@ static void mumuniqueinquery(Matchprocessinfo *matchprocessinfo,
                  (mumcandptr-1)->subjectpos,
                  matchprocessinfo->showspecinfo) != 0 )
         {
-          printf("%s", "error");
+          gt_error_set(err, "error in methode showmatch");
           return;
         };
       }
@@ -293,7 +297,7 @@ static void mumuniqueinquery(Matchprocessinfo *matchprocessinfo,
                mumcandptr->subjectpos,
                matchprocessinfo->showspecinfo)  != 0 )
       {
-        printf("%s", "error");
+        gt_error_set(err, "error in methode showmatch");
         return;
       };
     }
@@ -307,7 +311,8 @@ static void matchposinsinglesequence(uint64_t unitnum,
                                       const char *querydesc,
                                       Findmatchfunction findmatchfunction,
                                       Processmatchfunction processmatch,
-                                      Matchprocessinfo *matchprocessinfo)
+                                      Matchprocessinfo *matchprocessinfo,
+                                      GtError *err)
 {
   const GtUchar *qptr;
   unsigned long remaining;
@@ -316,7 +321,8 @@ static void matchposinsinglesequence(uint64_t unitnum,
   showquerydesc(unitnum,
                 querylen,
                 querydesc,
-                matchprocessinfo->showspecinfo);
+                matchprocessinfo->showspecinfo,
+                err);
 
   /* take every suffix of query, qptr is a alias name of qstart */
   for (qptr = query, remaining = querylen; remaining > 0; qptr++, remaining--)
@@ -326,7 +332,7 @@ static void matchposinsinglesequence(uint64_t unitnum,
                    qptr,            /* variable position in query */
                    query+querylen,  /* absolute query end position */
                    processmatch,
-                   matchprocessinfo) )
+                   matchprocessinfo) )    /* attention: no GtError further given */
     {
       continue;
     };
@@ -336,7 +342,8 @@ static void matchposinsinglesequence(uint64_t unitnum,
   {
       mumuniqueinquery(matchprocessinfo,
                       query,
-                      querylen);
+                      querylen,
+                      err);
       gt_array_reset(matchprocessinfo->showspecinfo->mumcandtab);
   }
 }
@@ -438,7 +445,8 @@ int gt_findmum(const GtEncseq *encseq,
                                  querydesc,
                                  findmatchfunction,
                                  processmatch,
-                                 &matchprocessinfo);
+                                 &matchprocessinfo,
+                                 err);
       }
       if ( reversecomplement || bothdirections )
       {
@@ -470,7 +478,8 @@ int gt_findmum(const GtEncseq *encseq,
                                  querydesc,
                                  findmatchfunction,
                                  processmatch,
-                                 &matchprocessinfo);
+                                 &matchprocessinfo,
+                                 err);
 
         gt_free(revcompquery);
       }

@@ -19,6 +19,8 @@
 #include "match/eis-voiditf.h"
 #include "match/matchmode_api.h"
 #include "tools/gt_maxmat4.h"
+#include "core/progress_timer_api.h"
+#include "core/showtime.h"
 
 typedef struct {
   bool mum,
@@ -31,7 +33,7 @@ typedef struct {
        fourcolumn,                           /* is option -F on? */
        showsequencelengths;                  /* showsequencelengths */
   Definedunsignedlong leastlength;           /* leastlength */
-  bool verbose;
+  bool showtime;
 } GtMaxmat4Arguments;
 
 static void* gt_maxmat4_arguments_new(void)
@@ -55,7 +57,8 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
 {
   GtMaxmat4Arguments *arguments = (GtMaxmat4Arguments*)tool_arguments;
   GtOption *option_mum, *option_mumreference, *option_maxmatch, *option_l,
-           *option_b, *option_r, *option_s, *option_c, *option_F, *option_L;
+           *option_b, *option_r, *option_s, *option_c, *option_F, *option_L, 
+           *option_showtime;
   GtOptionParser *op;
 
   gt_assert(arguments);
@@ -136,6 +139,12 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
       "show the length of the query sequence on the header line",
       &arguments->showsequencelengths, false);
   gt_option_parser_add_option(op, option_L);
+  
+  /* -showtime for showtime */
+  option_showtime = gt_option_new_bool("showtime",
+      "show the progress time",
+      &arguments->showtime, false);
+  gt_option_parser_add_option(op, option_showtime);
 
   /* option implications */
   gt_option_imply_either_2(option_c, option_b, option_r);
@@ -169,7 +178,7 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
                              GT_UNUSED const char **argv,
                              GT_UNUSED int parsed_args,
                              void *tool_arguments,
-                             GT_UNUSED GtError *err)
+                             GtError *err)
 {
   GtMaxmat4Arguments *arguments = (GtMaxmat4Arguments*)tool_arguments;
   int arg = parsed_args;
@@ -195,6 +204,17 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
     had_err = -1;
   }*/
   GtStrArray *queryfiles = gt_str_array_new();
+  
+  /* GtTimer *timer;
+  timer = gt_timer_new();
+  gt_timer_start(timer); */
+  GtProgressTimer *maxmat4progress = NULL;  
+  if (gt_showtime_enabled() || arguments->showtime)
+  {
+    maxmat4progress = gt_progress_timer_new("finding maximal matches of some minimum length "
+                                        "between a reference sequence and a query-sequence");
+  }
+
   int idx;
   for (idx=arg+1; idx<argc; idx++)
   {
@@ -269,7 +289,7 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
                    arguments->showreversepositions,
                    arguments->fourcolumn,
                    arguments->showsequencelengths,
-                   arguments->verbose,
+                   arguments->showtime,
                    err) != 0)
     {
       haserr = true;
@@ -285,6 +305,14 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   gt_logger_delete(logger);
   gt_str_delete(referencefile);
   gt_str_array_delete(queryfiles);
+  
+  /* gt_timer_show(timer, stdout);
+  gt_timer_delete(timer); */
+  if (maxmat4progress != NULL)
+  {
+    gt_progress_timer_start_new_state(maxmat4progress,NULL,stdout);
+    gt_progress_timer_delete(maxmat4progress);
+  }
   return haserr ? -1 : 0;
 }
 

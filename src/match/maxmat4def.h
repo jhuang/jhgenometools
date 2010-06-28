@@ -63,6 +63,7 @@ typedef short int (*Processmatchfunction)
                              unsigned long querylength,
                              unsigned long matchlength,
                              unsigned long subjectpos,
-                             Showspecinfo *showspecinfo);
+                             Showspecinfo *showspecinfo
+                             /*GtError *err*/);
 
 #endif
