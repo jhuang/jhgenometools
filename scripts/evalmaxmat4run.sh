@@ -2,22 +2,26 @@
 
 # set -e -x
 
+USAGE="Usage: $0 [small|all]"
+
 if test $# -ne 1
 then
-  echo "Usage: $0 [small|all]"
+  echo ${USAGE}
   exit 1
 fi
 
-#repetitivefiles="random trnaglutamine"
-
 case $1 in
-  small) allfiles="at1MB atinsert duplicate randomsmall random"
+  #small) allfiles="at1MB atinsert duplicate randomsmall random"
+  small) allfiles="at1MB atinsert duplicate random"
          ;;
   all)   allfiles="at1MB atinsert duplicate randomsmall random random159 random160 randomn tttsmall trnaglutamine"
          ;;
   *)     allfiles=$1
          ;;
 esac
+
+export GT_MEM_BOOKKEEPING=on
+export GT_ENV_OPTIONS=-spacepeak
 
 code2file()
 {
@@ -48,48 +52,22 @@ code2file()
   esac
 }
 
-#checkrepetitive()
-#{
-  #filename=$1                        # 如果接收的文件 在repetitivefiles表里, 错误.
-  #for cfc in ${repetitivefiles}
-  #do
-    #if test ${cfc} == ${filename}
-    #then
-      #return 1
-    #fi
-  #done
-  #return 0
-#}
-
 mkpackedindex()
 {
-  fc=$1
-  filename=`code2file $1`
-  shift
-  printf "# RUN $fc $*\n"
-  time gt packedindex mkindex -bsize 10 $* -dir rev -db ${filename} -indexname pck-idx -sprank -dna -ssp -des -sds -pl | egrep '# TIME overall|# space peak'
-  #${RUNNER} gt suffixerator -v -showtime -indexname sfx-id -tis -suf -db ${filename} $* | egrep '# TIME overall|# space peak'
+  dbfilename=$1
+  dbfilepath=`code2file $dbfilename`
+  shift  # so that one gets only the rest parameters from command line with $*
+  #printf "# RUN packedindex mkindex $dbfilename $*\n"
+  ${RUNNER} gt packedindex mkindex -bsize 10 $* -dir rev -db ${dbfilepath} -indexname pck-idx -sprank -dna -ssp -des -sds -pl | egrep '# TIME overall'
 }
-
-#mkesa()
-#{
-  #fc=$1
-  #printf "# RUN $fc mkesa\n"
-  #filename=`code2file $1`
-  #runmkesa-sfx.sh ${filename}
-#}
 
 maxmat4()
 {
-  fc=$1
-  printf "# RUN maxmat4 comparing with $fc\n"
-  filename=`code2file $1`
-  #mkesa -p mkesa-idx -b D -g suf -v -d $1
-  #echo ${RUNNER}
-  time gt dev maxmat4 $* -L pck-idx ${filename} | egrep '# TIME overall|# space peak'
-  #time gt suffixerator -indexname pck-idx -dna -v -suf -tis -showtime -pl -dc 64 -db $1 
-  #cmp -s sfx-idx.suf mkesa-idx.suf
-  #runmkesa-sfx.sh ${filename}
+  queryfilename=$2
+  printf "# RUN maxmat4 $3 $4 $5 ($1/$queryfilename)\n"
+  queryfilepath=`code2file $queryfilename`
+
+  ${RUNNER} gt dev maxmat4 $3 $4 $5 -L -showtime pck-idx ${queryfilepath} | egrep '# TIME overall|# space peak'
 }
 
 for rfc in $allfiles
@@ -102,34 +80,29 @@ do
   fi
 done
 
-# suffixerator ecoli2 -sat uint32 -dc 128
-# exit 0
-
 echo "# DATE `date +%Y-%m-%d-%H:%M`"
-export GT_MEM_BOOKKEEPING=on
-export GT_ENV_OPTIONS=-spacepeak
+
+matchoptions=( -mumreference -maxmatch -mum )
+#matchoptions=( -mumreference )
+
 for rfc in $allfiles
 do
-  #checkrepetitive ${rfc}
   if test $? -eq 0
   then
-    #echo "weg 1\n"
     mkpackedindex ${rfc} -locfreq 8
   fi
-  for matchoption in "-mumreference -maxmatch -mum"
+  for matchoption in ${matchoptions[@]}
   do
-    for minlength in 15 19 23
+    for minlength in 22
     do
       for rfc2 in $allfiles
       do 
         if test ${rfc2} != ${rfc}   
         then  
-          #echo "weg 2\n"
-          maxmat4 ${rfc2} ${matchoption} -l ${minlength}
+          maxmat4 ${rfc} ${rfc2} ${matchoption} -l ${minlength}
         fi
       done    
     done
   done
-  #mkesa ${rfc}
-  rm -f pck-idx.* #mkesa-idx.*
+  rm -f pck-idx.*
 done
