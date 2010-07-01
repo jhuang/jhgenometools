@@ -95,7 +95,16 @@ static void showquerydesc(GT_UNUSED uint64_t unitnum,
     }
     else
     {
-      printf("> %s",querydesc);
+			/* first line is query sequence */
+      if (showspecinfo->queryreadmode==GT_READMODE_FORWARD)
+      {
+        printf("> %s",querydesc);
+      }
+      else
+      {
+        printf("> %s Reverse",querydesc);
+      }
+      /* printf("> %s",querydesc); */
     }
   }
   printf("\n");
