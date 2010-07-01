@@ -1,0 +1,298 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper]{geometry}
+\usepackage{url}
+\usepackage{alltt}
+\usepackage{xspace}
+\usepackage{times}
+\usepackage{bbm}
+\usepackage{verbatim}
+\usepackage{ifthen}
+\usepackage{optionman}
+
+\newcommand{\MMFour}{\texttt{maxmat4}\xspace}
+\newcommand{\GenomeTools}{\textit{GenomeTools}\xspace}
+\newcommand{\MUM}[0]{\textit{MUM}\xspace}
+\newcommand{\packedindex}{\textit{packedindex}\xspace}
+\newcommand{\Match}[3]{(#3,#1,#2)}
+
+\newcommand{\Showrep}[2]{\begin{array}{@{}c@{}}#1\\ {#2} \end{array}}
+\newcommand{\Function}[3]{#1:#2\to#3}
+\newcommand{\Size}[1]{|#1|}
+\newcommand{\Iff}{if and only if\xspace}
+\newcommand{\Repfind}[0]{\texttt{\small repfind}\xspace}
+\newcommand{\Suffixerator}[0]{\texttt{\small suffixerator}\xspace}
+\newcommand{\Nats}{\textrm{I}\!\textrm{N}}
+\newcommand{\Substring}[3]{#1[#2..#3]}
+\newcommand{\Subchar}[2]{#1[#2]}
+
+\title{\MMFour: a program to find maximal matches\\
+       in Large Sequences Manual}
+
+\author{\begin{tabular}{c}
+         \textit{Jiabin Huang}\\
+         \textit{Stefan Kurtz}\\[1cm]
+         Research Group for Genomeinformatics\\
+         Center for Bioinformatics\\
+         University of Hamburg\\
+         Bundesstrasse 43\\
+         20146 Hamburg\\
+         Germany\\[1cm]
+         \url{kurtz@zbh.uni-hamburg.de}\\[1cm]
+        \end{tabular}}
+\begin{document}
+\maketitle
+
+The \MMFour tools of the \GenomeTools package is a program to
+find maximal matches of some minimum length between a reference-sequence 
+and a query-sequence using FM-index\cite{Ferragina00opportunisticdata}. It also allows for 
+the computation of \MUM-candidates as well as \MUM{s}. This document describes
+the options of \MMFour and the output format. 
+In the following, the notion
+\emph{match}  always refers to \emph{maximal matches} if not stated
+otherwise. Match only the characters a, c, g, or t, they can be in upper or in lower case.
+
+\section{The Options}
+
+The program \MMFour is called as follows:
+
+\noindent\texttt{gt}  \noindent\texttt{dev}  
+$\MMFour~~[\mathit{options}]~~\mathit{referencepckindex}~~
+           \mathit{queryfile}_{1}~~\cdots~~\mathit{queryfile}_{n}$
+%\noindent\texttt{gt} \Repfind [\textit{options}] \Showoption{ii}
+%\Showoptionarg{indexname} [\textit{options}] 
+           
+referencepckindex is a packed index file, which is constructed from a given set of subject sequences 
+using \packedindex tools of the \GenomeTools package.
+
+The options for \MMFour are as follows:
+
+\begin{list}{}{}
+
+\Option{mum}{}{
+Compute \MUM{s}, i.e.\ matches that are unique in both sequences.
+}
+
+\Option{mumreference}{}{
+Compute \MUM-candidates, i.e.\ matches that are unique
+in the reference-sequence but not necessarily in the query-sequence.
+}
+
+\Option{maxmatch}{}{
+Compute all maximal matches, regardless of their uniqueness.
+}
+
+\Option{l}{$q$}{
+Set the minimum length $q$ of a match to be reported. $q$ must be a 
+positive integer. Only matches of length at least $q$ are reported. 
+If this option is not used, then the default value for $q$ is 20.
+}
+
+\Option{b}{}{
+Compute direct matches and reverse complement matches.
+}
+
+\Option{r}{}{
+Only compute reverse complement matches.
+}
+
+\Option{s}{}{
+Show the matching substring.
+}
+
+\Option{c}{}{
+Report the query-position of a reverse complement match
+relative to the original query-sequence. Suppose \(x\) is the 
+reference-sequence and \(y\) is the query-sequence. By definition, a
+reverse complement match \(\Match{i}{j}{l}\) of \(x\) and \(y\) is a
+match of \(x\) and \(\overline{y}\), where \(\overline{y}\) is the
+reverse complement of \(y\). By default, a match is reported as a triple
+\begin{alltt}
+i        j        l
+\end{alltt}
+Position \(j\) is relative to \(\overline{y}\). With this option,
+not \(j\) but \(m-j+1\) is reported, where \(m\) is the length of the 
+query-sequence. Now note that position \(m-j+1\) in \(y\) corresponds 
+to position \(j\) in \(\overline{y}\).
+}
+
+\Option{F}{}{
+Forces 4 column output format regardless of the number of reference
+sequence inputs, i.e. prefixes every output match with its reference
+sequence identifier.
+}
+
+\Option{L}{}{
+Show the length of the query-sequence on the header line.
+}
+
+\Option{version}{}{
+Displays \GenomeTools version information.
+}
+
+\Option{help}{}{
+Show the possible options and exit.
+}
+
+\end{list}
+
+Options \Showoption{mum}, \Showoption{mumreference} and
+\Showoption{maxmatch} cannot be combined. If none of these options are
+used, then the program will default to \Showoption{mumreference}.
+
+Option \Showoption{b} and \Showoption{r} exclude each other. If none
+of these two options is used, then only direct matches are reported.
+Option \Showoption{c} can only be used in combination with
+option \Showoption{b} or option \Showoption{r}.
+
+There must be exactly one reference packed index file given and at least one
+query-file.
+The reference packed index file must be a pck format, which is constructed from a given set of subject sequences 
+using \packedindex tools of the \GenomeTools package. The query-files must be in multiple fasta format.
+The query-files are processed one after the other. The uniqueness condition
+for the \MUM{s} refers to the entire set of reference-sequences but
+only to one query-sequence. That is, if a \MUM is reported, the
+matching substring is unique in all reference-sequences and in the currently
+processed query-sequence. The uniqueness does not necessarily extend to
+all query-sequences.
+
+Match only the characters a, c, g, or t, they can be in upper or in lower case.
+The characters are processed case insensitive. That is, a 
+lower case character is identified with the corresponding upper case 
+character. The sequence output via option \Showoption{s} is always
+in lower case. 
+All characters except for $a$, $c$, $g$, and $t$ are replaced by
+a unique character which is different for the reference-sequences and
+the query-sequences. This prevents false matches involving, for
+example, the wildcard symbols $s$, $w$, $r$, $y$, $m$, $k$, $b$, 
+$d$, $h$, $v$, and $n$ often occurring in DNA sequences.
+
+\subsection*{Important Remark} 
+The user of the program should carefully choose the least length parameter \(\ell\).
+The number of maximal matches exponentially decreases with increasing
+\(\ell\).
+
+\section{Output format}
+Suppose we have two fasta files \texttt{testdata/at1MB} and
+\texttt{testdata/U89959\_genomic.fas}. The first file contains 
+a collection of ESTs from Arabidopsis thaliana, while the second is 
+a complete BAC-sequence from the same organism. We want to use the first file as our
+original file, with which our reference packed index file product and the second as out query-file.
+
+At first, we product the reference packed index file from 
+fasta files \texttt{testdata/at1MB} with 
+\packedindex tools of the \GenomeTools package\cite{packedindexmanual}.
+
+\begin{verbatim}
+gt packedindex mkindex -tis -ssp -des -sds -indexname at1MBpck
+-db testdata/at1MB -sprank -dna -pl -bsize 10 -locfreq 32 -dir rev 
+\end{verbatim}
+
+Now let us look for direct matches and reverse complement
+matches in the reference and in the query sequences.
+The length of the matches should be at least 24 (options \Showoption{b} 
+and \Showoption{l} 24). 
+
+The corresponding program call is as follows:
+
+\begin{verbatim}
+gt dev maxmat4 -b -l 24 at1MBpck testdata/U89959_genomic.fas
+\end{verbatim}
+
+The standard output format that results from running \MMFour 
+on a single reference sequence with the above option is as follows:
+
+\begin{small}
+\begin{verbatim}
+> gi|1877523|gb|U89959.1| Arabidopsis thaliana
+  gi|3450378|gb|AI100417.1|AI100417       416     71282        26
+  gi|3449674|gb|AI099935.1|AI099935       119     72539       215
+  gi|3450080|gb|AI100119.1|AI100119       221     72776        31
+  gi|3449725|gb|AI099986.1|AI099986       206     77816        38
+  gi|3449578|gb|AI099839.1|AI099839        70    105387        42
+  gi|3449578|gb|AI099839.1|AI099839       171    105652        32
+  gi|3449578|gb|AI099839.1|AI099839       226    105707       145
+> gi|1877523|gb|U89959.1| Arabidopsis thaliana Reverse
+  gi|3449725|gb|AI099986.1|AI099986       205     29122        37
+  gi|3450307|gb|AI100346.1|AI100346       168    101871        24
+\end{verbatim}
+\end{small}
+
+For each query sequence, the corresponding header is reported on each line 
+beginning with a \texttt{\symbol{62}} symbol, even if there are no matches corresponding to this sequence. 
+Reverse complemented matches follow a query header that has the keyword Reverse 
+following the sequence tag, thus creating two headers for each query sequence and 
+alternating forward and reverse match lists. 
+If the reference-file is a multiple fasta file with more than one sequence,
+then the header line of the reference-sequence is also reported.
+For each match, the three columns list the position in the reference sequence, 
+the position in the query sequence, and the length of the match respectively. 
+Reverse complemented query positions are reported relative to the reverse 
+of the query sequence unless the \Showoption{c} option was used. 
+As was stated above the \Showoption{L} option adds the sequence lengths to the header line 
+and the \Showoption{s} option adds the match strings to the output, if these options 
+were used the program call would be as follows:
+
+\begin{verbatim}
+gt dev maxmat4 -b -l 24 -L -s -c at1MBpck testdata/U89959_genomic.fas
+\end{verbatim}
+
+the format would be as follows:
+
+\begin{small}
+\begin{verbatim}
+> gi|1877523|gb|U89959.1| Arabidopsis thaliana  Len = 106973                                    
+  gi|3450378|gb|AI100417.1|AI100417       416     71282        26
+tcatcatcatcatcatcatcatcata
+  gi|3449674|gb|AI099935.1|AI099935       119     72539       215
+ttaaaactccaaccttggaagattttaggagaatgagagcgacacgctctgtgcttcttttcctt ...
+  gi|3450080|gb|AI100119.1|AI100119       221     72776        31
+atatatatataaagcaaacatgttccagaat
+  gi|3449725|gb|AI099986.1|AI099986       206     77816        38
+atatatatatatatatatatatatatatatatatatgt
+  gi|3449578|gb|AI099839.1|AI099839        70    105387        42
+ctcattggctggggaacttctgatgacggcgaagattattgg
+  gi|3449578|gb|AI099839.1|AI099839       171    105652        32
+gaggaacgaacgaatgtggcattgaacagagt
+  gi|3449578|gb|AI099839.1|AI099839       226    105707       145
+gaagaacgtatttaaaggtattaccacttcagatgatcttctggtttcctcagtctaaacaagac ...
+> gi|1877523|gb|U89959.1| Arabidopsis thaliana Reverse  Len = 106973
+  gi|3449725|gb|AI099986.1|AI099986       205     77852        37
+catatatatatatatatatatatatatatatatatat
+  gi|3450307|gb|AI100346.1|AI100346       168      5103        24
+tctcttcttcttcttcttcttctt
+\end{verbatim}
+\end{small}
+
+Where the length of each query is noted after the $Len$ keyword and 
+the match string is listed on the line after its match coordinates. 
+Note that the ellipsis marks are not part of the actual output, 
+but added to fit the output into the manual. 
+Finally, with the \Showoption{F} option (Force 4 column output format), 
+the reference sequence identifier is also reported. 
+This is placed at the end of each match line, 
+creating an four column command line as follows:
+
+\begin{verbatim}
+gt dev maxmat4 -b -l 24 -L -s -c -F 
+at1MBpck testdata/U89959_genomic.fas
+\end{verbatim}
+
+creating an four column output format as follows:
+\begin{small}
+\begin{verbatim}
+> gi|1877523|gb|U89959.1| Arabidopsis thaliana  Len = 106973                                    
+       416     71282        26       561
+tcatcatcatcatcatcatcatcata
+       119     72539       215      1265
+ttaaaactccaaccttggaagattttaggagaatgagagcgacacgctctgtgcttcttttcctt ...
+       221     72776        31       859
+atatatatataaagcaaacatgttccagaat
+       206     77816        38      1214
+(output continues ...)
+\end{verbatim}
+\end{small}
+
+
+\bibliographystyle{unsrt}
+\bibliography{maxmat4}
+\end{document}
