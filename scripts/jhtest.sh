@@ -69,28 +69,30 @@ then
   cd testsuite
   if test $rungenerate -eq 1
   then
-		env -i GT_MEM_BOOKKEEPING=on ./testsuite.rb \
+		./testsuite.rb \
 				 ${MC} -keywords 'generate_mummer_mumreference_benchmark' \
 				 -gttestdata ${GTTESTDATA}
-		env -i GT_MEM_BOOKKEEPING=on ./testsuite.rb \
+		./testsuite.rb \
 				 ${MC} -keywords 'generate_mummer_maxmatch_benchmark' \
 				 -gttestdata ${GTTESTDATA}
-		env -i GT_MEM_BOOKKEEPING=on ./testsuite.rb \
+		./testsuite.rb \
 				 ${MC} -keywords 'generate_mummer_mum_benchmark' \
 				 -gttestdata ${GTTESTDATA}				 
 	else
-		env -i GT_MEM_BOOKKEEPING=on ./testsuite.rb \
+		./testsuite.rb \
+				 ${MC} ${SE} -keywords 'gt_maxmat4_inputerror'
+		./testsuite.rb \
 				 ${MC} ${SE} -keywords 'check_maxmat4_mumreference_with_mummer' \
 				 -gttestdata ${GTTESTDATA}
-		env -i GT_MEM_BOOKKEEPING=on ./testsuite.rb \
+		./testsuite.rb \
 				 ${MC} ${SE} -keywords 'check_maxmat4_maxmatch_with_mummer' \
 				 -gttestdata ${GTTESTDATA}
-		env -i GT_MEM_BOOKKEEPING=on ./testsuite.rb \
+		./testsuite.rb \
 				 ${MC} ${SE} -keywords 'check_maxmat4_mum_with_mummer' \
 				 -gttestdata ${GTTESTDATA}				 
-		env -i GT_MEM_BOOKKEEPING=on GTTESTDATA=${HOME}/gttestdata ./testsuite.rb \
-       ${MC} -keywords 'check_maxmat4_with_repfind' \
-       -gttestdata ${GTTESTDATA}
+		./testsuite.rb \
+         ${MC} ${SE} -keywords 'check_maxmat4_with_repfind' \
+         -gttestdata ${GTTESTDATA}
 	fi
   cd ..
 fi

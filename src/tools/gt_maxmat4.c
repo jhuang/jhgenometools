@@ -237,6 +237,8 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
                         logger,
                         err) != 0)
   {
+		gt_assert(!haserr);
+    /* gt_error_set(err, "error in reading reference file"); */
     haserr = true;
     totallength = 0;
   } else
