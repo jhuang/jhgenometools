@@ -250,14 +250,14 @@ end
 Name "gt dev maxmat4 referencefile (packed index) not exist"
 Keywords "gt_maxmat4_inputerror"
 Test do                 
-	run_test "#{$bin}gt dev maxmat4 -maxmatch /nothing/pck #{$testdata}at1MB", :retval => 1                               
+	run_test "#{$bin}gt dev maxmat4 -maxmatch /nothing/pck #{$testdata}U89959_genomic.fas", :retval => 1                               
   grep $last_stderr, "No such file or directory"
 end
 
 Name "gt dev maxmat4 referencefile (packed index) empty"
 Keywords "gt_maxmat4_inputerror"
 Test do                 
-	run_test "#{$bin}gt dev maxmat4 -maxmatch #{$testdata}empty_file #{$testdata}at1MB", :retval => 1                           
+	run_test "#{$bin}gt dev maxmat4 -maxmatch #{$testdata}empty_file #{$testdata}U89959_genomic.fas", :retval => 1                           
   grep $last_stderr, "No such file or directory"
 end
 
@@ -266,7 +266,7 @@ Keywords "gt_maxmat4_inputerror"
 Test do       
   run_test "#{$bin}gt packedindex mkindex -bsize 10 -locfreq 8 -dir rev -db " +
            "#{$testdata}at1MB -indexname at1MBpck -sprank -dna -ssp -pl", :maxtime => 32000           
-	run_test "#{$bin}gt dev maxmat4 -maxmatch at1MBpck #{$testdata}at1MB", :retval => 1, :maxtime => 32000                         
+	run_test "#{$bin}gt dev maxmat4 -maxmatch at1MBpck #{$testdata}U89959_genomic.fas", :retval => 1, :maxtime => 32000                         
   grep $last_stderr, "No such file or directory"
 end
 
@@ -335,7 +335,7 @@ Keywords "gt_maxmat4_inputerror"
 Test do                                               
   run_test "#{$bin}gt packedindex mkindex -bsize 10 -locfreq 8 -dir rev -db " +
            "#{$testdata}at1MB -indexname at1MBpck -sprank -dna -ssp -des -sds -pl", :maxtime => 32000 
-  run_test "#{$bin}gt dev maxmat4 -maxmatch -s -s at1MBpck #{$testdata}at1MB", :retval => 1, :maxtime => 32000 
+  run_test "#{$bin}gt dev maxmat4 -maxmatch -s -s at1MBpck #{$testdata}U89959_genomic.fas", :retval => 1, :maxtime => 32000 
   grep $last_stderr, "option \"s\" already set"
 end
 
@@ -344,7 +344,7 @@ Keywords "gt_maxmat4_inputerror"
 Test do                                               
   run_test "#{$bin}gt packedindex mkindex -bsize 10 -locfreq 8 -dir rev -db " +
            "#{$testdata}at1MB -indexname at1MBpck -sprank -dna -ssp -des -sds -pl", :maxtime => 32000 
-  run_test "#{$bin}gt dev maxmat4 -maxmatch -c at1MBpck #{$testdata}at1MB", :retval => 1, :maxtime => 32000  
+  run_test "#{$bin}gt dev maxmat4 -maxmatch -c at1MBpck #{$testdata}U89959_genomic.fas", :retval => 1, :maxtime => 32000  
   grep $last_stderr, "option \"-c\" requires option \"-b\" or \"-r\""
 end
 
@@ -353,7 +353,7 @@ Keywords "gt_maxmat4_inputerror"
 Test do                                               
   run_test "#{$bin}gt packedindex mkindex -bsize 10 -locfreq 8 -dir rev -db " +
            "#{$testdata}at1MB -indexname at1MBpck -sprank -dna -ssp -des -sds -pl", :maxtime => 32000 
-  run_test "#{$bin}gt dev maxmat4 -maxmatch -b -r at1MBpck #{$testdata}at1MB", :retval => 1, :maxtime => 32000  
+  run_test "#{$bin}gt dev maxmat4 -maxmatch -b -r at1MBpck #{$testdata}U89959_genomic.fas", :retval => 1, :maxtime => 32000  
   grep $last_stderr, "option \"-b\" and option \"-r\" exclude each other"
 end
 
@@ -362,6 +362,6 @@ Keywords "gt_maxmat4_inputerror"
 Test do                                               
   run_test "#{$bin}gt packedindex mkindex -bsize 10 -locfreq 8 -dir rev -db " +
            "#{$testdata}at1MB -indexname at1MBpck -sprank -dna -ssp -des -sds -pl", :maxtime => 32000 
-  run_test "#{$bin}gt dev maxmat4 -maxmatch -mum at1MBpck #{$testdata}at1MB", :retval => 1, :maxtime => 32000  
+  run_test "#{$bin}gt dev maxmat4 -maxmatch -mum at1MBpck #{$testdata}U89959_genomic.fas", :retval => 1, :maxtime => 32000  
   grep $last_stderr, "option \"-mum\" and option \"-maxmatch\" exclude each other"
 end

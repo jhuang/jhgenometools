@@ -58,7 +58,7 @@ mkpackedindex()
   dbfilepath=`code2file $dbfilename`
   shift  # so that one gets only the rest parameters from command line with $*
   #printf "# RUN packedindex mkindex $dbfilename $*\n"
-  ${RUNNER} gt packedindex mkindex -bsize 10 $* -dir rev -db ${dbfilepath} -indexname pck-idx -sprank -dna -ssp -des -sds -pl | egrep '# TIME overall'
+  ${RUNNER} gt packedindex mkindex -bsize 10 $* -dir rev -db ${dbfilepath} -indexname pck -sprank -dna -ssp -des -sds -pl | egrep '# TIME overall'
 }
 
 maxmat4()
@@ -67,7 +67,7 @@ maxmat4()
   printf "# RUN maxmat4 $3 $4 $5 ($1/$queryfilename)\n"
   queryfilepath=`code2file $queryfilename`
 
-  ${RUNNER} gt dev maxmat4 $3 $4 $5 -L -showtime pck-idx ${queryfilepath} | egrep '# TIME overall|# space peak'
+  ${RUNNER} gt dev maxmat4 $3 $4 $5 -L -showtime pck ${queryfilepath} | egrep '# TIME overall|# space peak'
 }
 
 for rfc in $allfiles
@@ -104,5 +104,5 @@ do
       done    
     done
   done
-  rm -f pck-idx.*
+  rm -f pck.*
 done
