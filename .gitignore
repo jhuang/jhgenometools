@@ -78,3 +78,5 @@ testdata/genomediff
 *.pyc
 *.directory
 LocalMakefile*
+gmon.out
+tmp.prot
