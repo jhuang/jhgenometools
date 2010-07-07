@@ -31,7 +31,8 @@ typedef struct {
        showstring,                           /* showstring */
        showreversepositions,                 /* showreversepositions */
        fourcolumn,                           /* is option -F on? */
-       showsequencelengths;                  /* showsequencelengths */
+       showsequencelengths,                  /* showsequencelengths */
+       prebwt;
   Definedunsignedlong leastlength;           /* leastlength */
   bool showtime;
 } GtMaxmat4Arguments;
@@ -58,7 +59,7 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
   GtMaxmat4Arguments *arguments = (GtMaxmat4Arguments*)tool_arguments;
   GtOption *option_mum, *option_mumreference, *option_maxmatch, *option_l,
            *option_b, *option_r, *option_s, *option_c, *option_F, *option_L, 
-           *option_showtime;
+           *option_p, *option_showtime;
   GtOptionParser *op;
 
   gt_assert(arguments);
@@ -139,6 +140,12 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
       "show the length of the query sequence on the header line",
       &arguments->showsequencelengths, false);
   gt_option_parser_add_option(op, option_L);
+  
+  /* -p for prebwt */
+  option_p = gt_option_new_bool("p",
+      "use precomputed bwt-bounds",
+      &arguments->prebwt, false);
+  gt_option_parser_add_option(op, option_p);
   
   /* -showtime for showtime */
   option_showtime = gt_option_new_bool("showtime",
@@ -226,6 +233,9 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   gt_assert(tool_arguments);
   logger = gt_logger_new(false, GT_LOGGER_DEFLT_PREFIX, stdout);
   mappedbits = SARR_ESQTAB|SARR_SSPTAB|SARR_DESTAB|SARR_SDSTAB;
+  if (arguments->prebwt) { 
+     mappedbits = SARR_ESQTAB|SARR_SSPTAB|SARR_DESTAB|SARR_SDSTAB|SARR_BCKTAB;
+  }
 
   /*
    * map suffixarray from referencefile, a referencefile contains maybe many
@@ -253,7 +263,7 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
     packedindex = gt_loadvoidBWTSeqForSA(gt_str_get(referencefile),
                                          &suffixarray,
                                          totallength,
-                                         false,  /* bool withpckbt */
+                                         false,  /* bool withpckbwt */
                                          err);
     if (packedindex == NULL)
     {
