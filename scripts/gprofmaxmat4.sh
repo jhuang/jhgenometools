@@ -10,4 +10,4 @@ bin/gt packedindex mkindex -bsize 10 -locfreq 8 -dir rev \
                        -sprank -dna -ssp -des -sds -pl
 env -i GT_MEM_BOOKKEEPING=off bin/gt dev maxmat4 -mumreference -b -l 25 \
 -L -s -c -showtime at1MBpck testdata/U89959_genomic.fas | egrep '# TIME overall' > tmp.prot
-gprof bin/gt gmon.out
+gprof -p bin/gt gmon.out | less
