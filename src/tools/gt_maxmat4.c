@@ -191,30 +191,20 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   int arg = parsed_args;
 
   Suffixarray suffixarray;
-  void *packedindex = NULL;
   GtLogger *logger = NULL;
   bool haserr = false;
   const GtAlphabet *alphabet = NULL;
   unsigned long totallength;
   unsigned int mappedbits;
+  
+  void *packedindex = NULL;
+  const Mbtab **mbtab = NULL;
+  unsigned int maxdepth = 0;
 
   /* init the referencefile and queryfiles */
   GtStr *referencefile = gt_str_new_cstr(argv[arg]);
-  /* it makes only sense if we got a reference file in format pck */
-  /*if (gt_option_is_set(optionpckindex))
-  {
-    gfmsubcallinfo->indextype = Packedindextype;
-  } else
-  {
-    gt_error_set(err,"a file must in format of specify "
-        "packed index for <reference file> be used");
-    had_err = -1;
-  }*/
   GtStrArray *queryfiles = gt_str_array_new();
   
-  /* GtTimer *timer;
-  timer = gt_timer_new();
-  gt_timer_start(timer); */
   GtProgressTimer *maxmat4progress = NULL;  
   if (gt_showtime_enabled() || arguments->showtime)
   {
@@ -233,9 +223,10 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   gt_assert(tool_arguments);
   logger = gt_logger_new(false, GT_LOGGER_DEFLT_PREFIX, stdout);
   mappedbits = SARR_ESQTAB|SARR_SSPTAB|SARR_DESTAB|SARR_SDSTAB;
-  if (arguments->prebwt) { 
-     mappedbits = SARR_ESQTAB|SARR_SSPTAB|SARR_DESTAB|SARR_SDSTAB|SARR_BCKTAB;
-  }
+  //if (arguments->prebwt) 
+  //{ 
+     //mappedbits |= SARR_PBTTAB;
+  //}
 
   /*
    * map suffixarray from referencefile, a referencefile contains maybe many
@@ -263,12 +254,18 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
     packedindex = gt_loadvoidBWTSeqForSA(gt_str_get(referencefile),
                                          &suffixarray,
                                          totallength,
-                                         false,  /* bool withpckbwt */
+                                         arguments->prebwt,  /* bool withpckbwt */
                                          err);
     if (packedindex == NULL)
     {
       haserr = true;
     }
+
+    if (arguments->prebwt) 
+    { 
+      mbtab = gt_bwtseq2mbtab(packedindex);
+      maxdepth = gt_bwtseq2maxdepth(packedindex);
+		}
   }
 
   if (!haserr)
@@ -289,7 +286,12 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
     }
 
     if (gt_findmum(suffixarray.encseq,
-                   packedindex,
+                   packedindex, 
+                   /* if option prebwt is false -> mbtab is NULL and maxdepth is 0,
+                    * but it doesn't matter, because the both parameters 
+                    * won't be used later in this case */
+                   mbtab,
+                   maxdepth,
                    totallength,
                    alphabet,
                    queryfiles,
@@ -301,6 +303,7 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
                    arguments->showreversepositions,
                    arguments->fourcolumn,
                    arguments->showsequencelengths,
+                   arguments->prebwt,
                    arguments->showtime,
                    err) != 0)
     {
@@ -312,14 +315,19 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   {
     gt_deletevoidBWTSeq(packedindex);
   }
+  if (arguments->prebwt)
+  {
+		//gt_free(mbtab[0]);
+    //mbtab[0] = NULL;
+    gt_free(mbtab);
+    mbtab = NULL;
+	}
   gt_freesuffixarray(&suffixarray);
 
   gt_logger_delete(logger);
   gt_str_delete(referencefile);
   gt_str_array_delete(queryfiles);
   
-  /* gt_timer_show(timer, stdout);
-  gt_timer_delete(timer); */
   if (maxmat4progress != NULL)
   {
     gt_progress_timer_start_new_state(maxmat4progress,NULL,stdout);

@@ -19,10 +19,14 @@
 
 #include "core/defined-types.h"
 #include "core/encseq.h"
+#include "core/unused_api.h"
 #include "match/matchmode_api.h"
+#include "match/maxmat4def.h"
 
 int gt_findmum(const GtEncseq *encseq,
                const void *genericindex,
+               const Mbtab **mbtab,
+               unsigned int maxdepth,
                unsigned long totallength,
                const GtAlphabet *alphabet,
                const GtStrArray *queryfilenames,
@@ -34,7 +38,8 @@ int gt_findmum(const GtEncseq *encseq,
                bool showreversepositions,
                bool fourcolumn,
                bool showsequencelengths,
-               bool verbose,
+               bool prebwt,
+               GT_UNUSED bool verbose,
                GtError *err);
 
 #endif

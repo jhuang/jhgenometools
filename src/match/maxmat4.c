@@ -15,12 +15,10 @@
 */
 
 #include "core/seqiterator_sequence_buffer.h"
-#include "core/unused_api.h"
 #include "spacedef.h"
 #include "core/format64.h"
 #include "match/eis-voiditf.h"
 #include "extended/reverse.h"
-#include "match/maxmat4def.h"
 
 /*
   This file contains functions to appropriately call the function
@@ -358,7 +356,9 @@ static void matchposinsinglesequence(uint64_t unitnum,
 }
 
 int gt_findmum(const GtEncseq *encseq,
-                const void *genericindex,
+                const void *packedindex,
+                const Mbtab **mbtab,
+                unsigned int maxdepth,
                 unsigned long totallength,
                 const GtAlphabet *alphabet,
                 const GtStrArray *queryfilenames,
@@ -370,6 +370,7 @@ int gt_findmum(const GtEncseq *encseq,
                 bool showreversepositions,
                 bool fourcolumn,
                 bool showsequencelengths,
+                bool prebwt,
                 GT_UNUSED bool verbose,
                 GtError *err)
 {
@@ -388,7 +389,10 @@ int gt_findmum(const GtEncseq *encseq,
   char *temp_char;
 
   gt_error_check(err);
-  matchprocessinfo.genericindex = genericindex;
+  matchprocessinfo.packedindex = packedindex;
+  matchprocessinfo.mbtab = mbtab;
+  matchprocessinfo.maxdepth = maxdepth;
+  matchprocessinfo.prebwt = prebwt;
   matchprocessinfo.totallength = totallength;
   matchprocessinfo.matchmode = matchmode;
 

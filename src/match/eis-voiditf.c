@@ -583,15 +583,33 @@ bool gt_voidpackedindexmumcandidates(const GtUchar *query,
                                     Processmatchfunction processmatch,
                                     Matchprocessinfo *info)
 {
-  return gt_packedindexmumcandidates((const BWTSeq *)info->genericindex,
-                                      info->encseq,
-                                      info->totallength,
-                                      (info->leastlength).valueunsignedlong,
-                                      query,
-                                      qstart,
-                                      qend,
-                                      processmatch,
-                                      info->showspecinfo);
+	if (info->prebwt)
+	{
+		return gt_packedindexmumcandidatesusingprebwt(
+		                                    (const BWTSeq *)info->packedindex,
+																				(const Mbtab **)info->mbtab,
+																				info->maxdepth,
+																				info->encseq,
+																				info->totallength,
+																				(info->leastlength).valueunsignedlong,
+																				query,
+																				qstart,
+																				qend,
+																				processmatch,
+																				info->showspecinfo);
+  }
+	else
+	{
+		return gt_packedindexmumcandidates((const BWTSeq *)info->packedindex,
+																				info->encseq,
+																				info->totallength,
+																				(info->leastlength).valueunsignedlong,
+																				query,
+																				qstart,
+																				qend,
+																				processmatch,
+																				info->showspecinfo);	
+	}
 }
 
 bool gt_voidpackedindexmaxmatches(const GtUchar *query,
@@ -600,13 +618,31 @@ bool gt_voidpackedindexmaxmatches(const GtUchar *query,
                                   Processmatchfunction processmatch,
                                   Matchprocessinfo *info)
 {
-  return gt_packedindexmaxmatches((const BWTSeq *) info->genericindex,
-                                  info->encseq,
-                                  info->totallength,
-                                  (info->leastlength).valueunsignedlong,
-                                  query,
-                                  qstart,
-                                  qend,
-                                  processmatch,
-                                  info->showspecinfo);
+	if (info->prebwt)
+	{
+		return gt_packedindexmaxmatchesusingprebwt(
+		                                 (const BWTSeq *)info->packedindex,
+																		 (const Mbtab **)info->mbtab,
+																		 info->maxdepth,
+																		 info->encseq,
+																		 info->totallength,
+																		 (info->leastlength).valueunsignedlong,
+																		 query,
+																		 qstart,
+																		 qend,
+																		 processmatch,
+																		 info->showspecinfo);	
+	}
+	else
+	{
+		return gt_packedindexmaxmatches((const BWTSeq *)info->packedindex,
+																		 info->encseq,
+																		 info->totallength,
+																		 (info->leastlength).valueunsignedlong,
+																		 query,
+																		 qstart,
+																		 qend,
+																		 processmatch,
+																		 info->showspecinfo);		
+	}
 }

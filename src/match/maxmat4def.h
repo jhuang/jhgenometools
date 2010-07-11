@@ -18,6 +18,7 @@
 #define MAXMAT4DEF_H
 
 #include "match/matchmode_api.h"
+#include "match/mbtab_api.h"
 
 /*
   This file defines some constants and types for computing maximal
@@ -44,7 +45,10 @@ typedef struct
 */
 typedef struct
 {
-  const void *genericindex;
+  const void *packedindex;
+  const Mbtab **mbtab;
+  unsigned int maxdepth;
+  bool prebwt;
   unsigned long totallength;
   GtMatchmode matchmode;
   const GtAlphabet *alphabet;

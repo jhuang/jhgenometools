@@ -517,13 +517,17 @@ unsigned long gt_packedindexmstatsforward(const BWTSeq *bwtseq,
                                        unsigned long *witnessposition,
                                        const GtUchar *qstart,
                                        const GtUchar *qend);
+                                       
+//typedef struct
+//{
+  //unsigned long lowerbound, upperbound;
+//} Mbtab;
 
 /**
  * @brief for packed index (given as void pointer), compute MUM-candidate
  * in range between qstart and qend. The MUM-candidate must longer than
  * or equal as the leastlength and it is unique in the reference-sequence
- * but not necessarily in the query-sequence. The result is saved in the
- * dynamic array maximalmatchtab
+ * but not necessarily in the query-sequence.
  * @param packed index of reference sequence (given as void pointer)
  * @param reference sequence in encoded form (given as void pointer)
  * @param total length of reference sequence
@@ -538,21 +542,36 @@ unsigned long gt_packedindexmstatsforward(const BWTSeq *bwtseq,
  * or saved (option mum), false if the process cannot be correct finished.
  */
 bool gt_packedindexmumcandidates(const BWTSeq *bwtSeq,
-                                const GtEncseq *encseq,
-                                unsigned long totallength,
-                                unsigned long leastlength,
-                                const GtUchar *query,
-                                const GtUchar *qstart,
-                                const GtUchar *qend,
-                                Processmatchfunction processmatch,
-                                Showspecinfo *showspecinfo);
-
+                                 const GtEncseq *encseq,
+                                 unsigned long totallength,
+                                 unsigned long leastlength,
+                                 const GtUchar *query,
+                                 const GtUchar *qstart,
+                                 const GtUchar *qend,
+                                 Processmatchfunction processmatch,
+                                 Showspecinfo *showspecinfo);
+/**
+ * @brief the same function as last, only using prebwt
+ * @param mabtab: contains lowerbound and upperbound, relevant for BWTSeq
+ * @param maxdepth: maximaldepth of boundaries
+ */       
+bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
+                                 const Mbtab **mbtab,
+                                 unsigned int maxdepth,
+                                 const GtEncseq *encseq,
+                                 unsigned long totallength,
+                                 unsigned long leastlength,
+                                 const GtUchar *query,
+                                 const GtUchar *qstart,
+                                 const GtUchar *qend,
+                                 Processmatchfunction processmatch,
+                                 Showspecinfo *showspecinfo);
+                                 
 /**
  * @brief for packed index (given as void pointer), compute all maximal
  * matches in range between qstart and qend. The maximal matches must
  * longer than or equal as the leastlength and it doesn't need uniqueness
- * in both sequences (reference-sequence and query-sequence). The results
- * are saved in the dynamic array maximalmatchtab.
+ * in both sequences (reference-sequence and query-sequence).
  * @param packed index of reference sequence (given as void pointer)
  * @param reference sequence in encoded form (given as void pointer)
  * @param total length of reference sequence
@@ -565,9 +584,25 @@ bool gt_packedindexmumcandidates(const BWTSeq *bwtSeq,
  * function showmatch
  * @return true if the computed results are correct printed (option maxmatch),
  * false if the process cannot be correct finished.
- * @return true if there are results, false if no result is saved
  */
 bool gt_packedindexmaxmatches(const BWTSeq *bwtSeq,
+                              const GtEncseq *encseq,
+                              unsigned long totallength,
+                              unsigned long leastlength,
+                              const GtUchar *query,
+                              const GtUchar *qstart,
+                              const GtUchar *qend,
+                              Processmatchfunction processmatch,
+                              Showspecinfo *showspecinfo);
+
+/**
+ * @brief the same function as last, only using prebwt
+ * @param mabtab: contains lowerbound and upperbound, relevant for BWTSeq
+ * @param maxdepth: maximaldepth of boundaries
+ */                              
+bool gt_packedindexmaxmatchesusingprebwt(const BWTSeq *bwtSeq,
+                              const Mbtab **mbtab,
+                              unsigned int maxdepth,
                               const GtEncseq *encseq,
                               unsigned long totallength,
                               unsigned long leastlength,

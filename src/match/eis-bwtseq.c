@@ -911,3 +911,327 @@ bool gt_packedindexmaxmatches(const BWTSeq *bwtSeq,
   }
   return false;
 }
+
+/** for option mumreference using prebwt */
+bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
+                                 /* relevant for BWTSeq */
+                                 const Mbtab **mbtab,
+                                 /* maximaldepth of boundaries */
+                                 unsigned int maxdepth,
+                                 const GtEncseq *encseq,
+                                 /* total length of encseq */
+                                 unsigned long totallength,
+                                 unsigned long leastlength,
+                                 /* absolute query start position */
+                                 const GtUchar *query,
+                                 /* variable position in query */
+                                 const GtUchar *qstart,
+                                 /* absolute query end position */
+                                 const GtUchar *qend,
+                                 Processmatchfunction processmatch,
+                                 Showspecinfo *showspecinfo)
+{
+  GtUchar cc;
+  const GtUchar *qptr;
+  struct matchBound bwtbound;
+  struct matchBound bwtbound2;
+  struct GtUlongPair seqpospair;
+  Symbol curSym;
+  unsigned long matchlength = 0;
+  const MRAEnc *alphabet;
+  
+  const Mbtab *mbptr;
+  GtCodetype code = 0;
+  GtUchar alphasize;
+  unsigned int numofchars;
+  numofchars = gt_alphabet_num_of_chars(gt_encseq_alphabet(encseq));
+  alphasize = (GtUchar) numofchars;
+
+  gt_assert(bwtSeq && qstart);
+  alphabet = BWTSeqGetAlphabet(bwtSeq);
+  qptr = qstart;
+
+  cc = *qptr;
+  if (ISSPECIAL (cc))
+  {
+    return 0;
+  }
+  
+  
+  //GtCodetype testcode = 0;
+  //unsigned int testdepth = 0;
+  //GtUchar testcc;
+
+  //gt_assert(seqlen > 0);
+  //for (testdepth = 0, testcode = 0;  testdepth <= 2;
+       //testdepth++, testcode = testcode * alphasize + cc)
+  //{
+    //if (seqlen <= (unsigned long) depth)
+    //{
+      //return seqlen;
+    //}
+    //cc = sequence[depth];
+    //gt_assert(ISNOTSPECIAL(cc));
+    //mbptr = mbtab[depth] + code + cc;
+    //if (mbptr->lowerbound >= mbptr->upperbound)
+    //{
+      //break;
+    //}
+  //}
+        
+	if (matchlength <= maxdepth)
+	{
+		//mbptr = mbtab[matchlength] + code + cc;
+		//bwtbound.start = mbptr->lowerbound;
+		//bwtbound.end = mbptr->upperbound;
+		//code = code * alphasize + cc;
+		printf("matchlength=%lu, code=%lu\n",matchlength, code);
+		mbptr = mbtab[matchlength] + code + cc;
+		
+		bwtbound.start = mbptr->lowerbound;
+		bwtbound.end = mbptr->upperbound;
+		printf("bwtbound.start=%lu, bwtbound.end=%lu\n",bwtbound.start, bwtbound.end);
+		code = code * alphasize + cc;
+		
+		curSym = MRAEncMapSymbol(alphabet, cc);
+    bwtbound2.start = bwtSeq->count[curSym];
+    bwtbound2.end = bwtSeq->count[curSym+1];
+    printf("bwtbound2.start=%lu, bwtbound2.end=%lu\n",bwtbound2.start, bwtbound2.end);
+	} 
+	else 
+	{
+		curSym = MRAEncMapSymbol(alphabet, cc);
+		bwtbound.start = bwtSeq->count[curSym];
+		bwtbound.end = bwtSeq->count[curSym+1];
+	}
+
+  matchlength = (unsigned long) (qptr - qstart + 1);
+  qptr++;
+
+  while (qptr < qend && bwtbound.start < bwtbound.end)
+  {
+    cc = *qptr;
+		if (ISSPECIAL(cc))
+		{
+			return 0;
+		}
+    
+		if (matchlength <= maxdepth)
+		{
+		//	mbptr = mbtab[matchlength] + code + cc;
+		//	bwtbound.start = mbptr->lowerbound;
+		//	bwtbound.end = mbptr->upperbound;
+		//	code = code * alphasize + cc;
+			
+		printf("matchlength=%lu, code=%lu\n",matchlength, code);
+		mbptr = mbtab[matchlength] + code + cc;
+		
+		bwtbound.start = mbptr->lowerbound;
+		bwtbound.end = mbptr->upperbound;
+		printf("bwtbound.start=%lu, bwtbound.end=%lu\n",bwtbound.start, bwtbound.end);
+		code = code * alphasize + cc;
+		
+		curSym = MRAEncMapSymbol(alphabet, cc);
+    bwtbound2.start = bwtSeq->count[curSym];
+    bwtbound2.end = bwtSeq->count[curSym+1];
+    printf("bwtbound2.start=%lu, bwtbound2.end=%lu\n",bwtbound2.start, bwtbound2.end);
+		} 
+		else 
+		{
+			curSym = MRAEncMapSymbol(alphabet, cc);
+			seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
+																							 bwtbound.start,bwtbound.end);
+			bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
+			bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;
+		}
+
+    matchlength = (unsigned long) (qptr - qstart + 1);
+    /*
+     * when the matchlength go beyond leastlength,
+     * the general map process will be ended
+     * and map advanced with function lcp(...)
+     */
+    if ( (matchlength >= leastlength) && (bwtbound.start+1 == bwtbound.end) )
+    {
+      unsigned long subjectpos = gt_voidpackedfindfirstmatchconvert(
+                                                 (const FMindex *)bwtSeq,
+                                                 bwtbound.start,
+                                                 matchlength);
+
+      /* check if it is left maximal */
+      if (isleftmaximal(encseq,subjectpos,query,qstart)) {
+
+        /*
+         * calculate long common prefix
+         * between reference sequence from (subjectpos + matchlength)
+         * against query sequence from qptr+1
+         */
+        unsigned long additionalmatchlength = lcp(encseq,
+                                                   subjectpos+matchlength,
+                                                   totallength,
+                                                   qptr+1,
+                                                   qend);
+        matchlength += additionalmatchlength;
+
+        /*
+         * print or save the result
+         */
+        processmatch(encseq,
+                     query,
+                     (unsigned long) (qstart-query),  /* querypos */
+                     (unsigned long) (qend-query),
+                     matchlength,
+                     subjectpos,
+                     showspecinfo);
+
+        return true;
+      }
+    }
+    /* general map process */
+    qptr++;
+  }
+  return false;
+}
+
+/** for option maxmatch using prebwt */
+bool gt_packedindexmaxmatchesusingprebwt(const BWTSeq *bwtSeq,
+                              /* relevant for BWTSeq */
+                              const Mbtab **mbtab,
+                              /* maximaldepth of boundaries */  
+                              unsigned int maxdepth,    
+                              const GtEncseq *encseq,
+                              unsigned long totallength,
+                              unsigned long leastlength,
+                              /* absolute query start position */
+                              const GtUchar *query,
+                              /* variable position in query */
+                              const GtUchar *qstart,
+                              /* absolute query end position */
+                              const GtUchar *qend,
+                              Processmatchfunction processmatch,
+                              Showspecinfo *showspecinfo)
+{
+  GtUchar cc;
+  const GtUchar *qptr;
+  struct matchBound bwtbound;
+  struct matchBound bwtbound2;
+  struct GtUlongPair seqpospair;
+  Symbol curSym;
+  unsigned long matchlength = 0;
+  const MRAEnc *alphabet;
+  unsigned long bwtboundthisline;
+  
+  const Mbtab *mbptr;
+  GtCodetype code = 0;
+  GtUchar alphasize;
+  unsigned int numofchars;
+  numofchars = gt_alphabet_num_of_chars(gt_encseq_alphabet(encseq));
+  alphasize = (GtUchar) numofchars;
+
+  gt_assert(bwtSeq && qstart);
+  alphabet = BWTSeqGetAlphabet(bwtSeq);
+  qptr = qstart;
+
+  cc = *qptr;
+  if (ISSPECIAL (cc))
+  {
+    return 0;
+  }
+
+	if (matchlength <= maxdepth)
+	{
+		printf("matchlength=%lu, code=%lu\n",matchlength, code);
+		mbptr = mbtab[matchlength] + code + cc;
+		
+		bwtbound.start = mbptr->lowerbound;
+		bwtbound.end = mbptr->upperbound;
+		printf("bwtbound.start=%lu, bwtbound.end=%lu\n",bwtbound.start, bwtbound.end);
+		code = code * alphasize + cc;
+		
+		curSym = MRAEncMapSymbol(alphabet, cc);
+    bwtbound2.start = bwtSeq->count[curSym];
+    bwtbound2.end = bwtSeq->count[curSym+1];
+    printf("bwtbound2.start=%lu, bwtbound2.end=%lu\n",bwtbound2.start, bwtbound2.end);
+	} 
+	else 
+	{
+    curSym = MRAEncMapSymbol(alphabet, cc);
+    bwtbound.start = bwtSeq->count[curSym];
+    bwtbound.end = bwtSeq->count[curSym+1];
+	}
+
+  matchlength = (unsigned long) (qptr - qstart + 1);
+  qptr++;
+
+  while (qptr < qend && bwtbound.start < bwtbound.end)
+  {
+    cc = *qptr;
+    if (ISSPECIAL (cc))
+    {
+      return 0;
+    }
+    
+    if (matchlength <= maxdepth)
+		{
+			mbptr = mbtab[matchlength] + code + cc;
+			bwtbound.start = mbptr->lowerbound;
+			bwtbound.end = mbptr->upperbound;
+			code = code * alphasize + cc;
+		} 
+		else 
+		{
+      curSym = MRAEncMapSymbol(alphabet, cc);
+      seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
+                                               bwtbound.start,bwtbound.end);
+      bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
+      bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;
+		}
+
+    matchlength = (unsigned long) (qptr - qstart + 1);
+    if (matchlength == leastlength)
+    {
+      for (bwtboundthisline=bwtbound.start;\
+           bwtboundthisline < bwtbound.end; bwtboundthisline++)
+      {
+        unsigned long subjectposthisline =\
+                gt_voidpackedfindfirstmatchconvert((const FMindex *)bwtSeq,
+                                                   bwtboundthisline,
+                                                   matchlength);
+
+        if ( isleftmaximal(encseq,subjectposthisline,query,qstart) ) {
+          /* every line moves forwards */
+          unsigned long matchlengththisline = matchlength;
+
+          /*
+           * calculate long common prefix for every line
+           * between this reference sequence snippet
+           * from (subjectposthisline + matchlengththisline)
+           * against query sequence from qptr+1
+           */
+          unsigned long additionalmatchlengththisline =\
+                                  lcp(encseq,
+                                      subjectposthisline + matchlengththisline,
+                                      totallength,
+                                      qptr+1,
+                                      qend);
+          matchlengththisline += additionalmatchlengththisline;
+
+          /*
+           * print the result
+           */
+          processmatch(encseq,
+                       query,
+                       (unsigned long) (qstart-query),  /* querypos */
+                       (unsigned long) (qend-query),
+                       matchlengththisline,
+                       subjectposthisline,
+                       showspecinfo);
+        }
+      }
+      return true;
+    }
+    /* together forwards */
+    qptr++;
+  }
+  return false;
+}
