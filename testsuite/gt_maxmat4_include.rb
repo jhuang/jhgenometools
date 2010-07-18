@@ -278,12 +278,13 @@ Test do
   grep $last_stderr, "cannot guess file type of file"
 end
 
-Name "gt dev maxmat4 referencefile protein"
+Name "gt dev maxmat4 -r or -b while referencefile is protein"
 Keywords "gt_maxmat4_inputerror"
 Test do       
-  run_test "#{$bin}gt packedindex mkindex -bsize 10 -locfreq 8 -dir rev -db " +
-           "#{$testdata}sw100K1.fsa -indexname sw100K1pck -sprank -dna -ssp -des -sds -pl", :retval => 1                       
-  grep $last_stderr, "illegal character"
+  run_test "#{$bin}gt packedindex mkindex -bsize 5 -locfreq 8 -dir rev -db " +
+           "#{$testdata}sw100K1.fsa -indexname sw100K1pck -sprank -protein -ssp -des -sds -pl", :maxtime => 32000 
+  run_test "#{$bin}gt dev maxmat4 -maxmatch -r sw100K1pck #{$testdata}sw100K2.fsa", :retval => 1, :maxtime => 32000                         
+  grep $last_stderr, "complement of DNA character"
 end
 
 Name "gt dev maxmat4 queryfile not exist"
