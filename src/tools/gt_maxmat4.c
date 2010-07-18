@@ -317,10 +317,10 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   }
   if (arguments->prebwt)
   {
-		//gt_free(mbtab[0]);
-    //mbtab[0] = NULL;
-    gt_free(mbtab);
-    mbtab = NULL;
+		//////gt_free(mbtab[0]);
+    //////mbtab[0] = NULL;
+    //gt_free(mbtab);
+    ////mbtab = NULL;
 	}
   gt_freesuffixarray(&suffixarray);
 

@@ -743,12 +743,12 @@ bool gt_packedindexmumcandidates(const BWTSeq *bwtSeq,
   {
     return 0;
   }
+  
+  matchlength = (unsigned long) (qptr - qstart + 1);
+  qptr++;
   curSym = MRAEncMapSymbol(alphabet, cc);
   bwtbound.start = bwtSeq->count[curSym];
   bwtbound.end = bwtSeq->count[curSym+1];
-
-  matchlength = (unsigned long) (qptr - qstart + 1);
-  qptr++;
 
   while (qptr < qend && bwtbound.start < bwtbound.end)
   {
@@ -757,13 +757,14 @@ bool gt_packedindexmumcandidates(const BWTSeq *bwtSeq,
     {
       return 0;
     }
+    
+    matchlength = (unsigned long) (qptr - qstart + 1);
     curSym = MRAEncMapSymbol(alphabet, cc);
     seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
                                              bwtbound.start,bwtbound.end);
     bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
     bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;
 
-    matchlength = (unsigned long) (qptr - qstart + 1);
     /*
      * when the matchlength go beyond lastlength,
      * the general map process will be ended
@@ -843,12 +844,12 @@ bool gt_packedindexmaxmatches(const BWTSeq *bwtSeq,
   {
     return 0;
   }
+  
+  matchlength = (unsigned long) (qptr - qstart + 1);
+  qptr++;
   curSym = MRAEncMapSymbol(alphabet, cc);
   bwtbound.start = bwtSeq->count[curSym];
   bwtbound.end = bwtSeq->count[curSym+1];
-
-  matchlength = (unsigned long) (qptr - qstart + 1);
-  qptr++;
 
   while (qptr < qend && bwtbound.start < bwtbound.end)
   {
@@ -857,13 +858,14 @@ bool gt_packedindexmaxmatches(const BWTSeq *bwtSeq,
     {
       return 0;
     }
+    
+    matchlength = (unsigned long) (qptr - qstart + 1);
     curSym = MRAEncMapSymbol(alphabet, cc);
     seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
                                              bwtbound.start,bwtbound.end);
     bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
     bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;
 
-    matchlength = (unsigned long) (qptr - qstart + 1);
     if (matchlength == leastlength)
     {
       for (bwtboundthisline=bwtbound.start;\
@@ -934,7 +936,7 @@ bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
   GtUchar cc;
   const GtUchar *qptr;
   struct matchBound bwtbound;
-  struct matchBound bwtbound2;
+  //struct matchBound bwtbound2;
   struct GtUlongPair seqpospair;
   Symbol curSym;
   unsigned long matchlength = 0;
@@ -956,57 +958,35 @@ bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
   {
     return 0;
   }
-  
-  
-  //GtCodetype testcode = 0;
-  //unsigned int testdepth = 0;
-  //GtUchar testcc;
-
-  //gt_assert(seqlen > 0);
-  //for (testdepth = 0, testcode = 0;  testdepth <= 2;
-       //testdepth++, testcode = testcode * alphasize + cc)
-  //{
-    //if (seqlen <= (unsigned long) depth)
-    //{
-      //return seqlen;
-    //}
-    //cc = sequence[depth];
-    //gt_assert(ISNOTSPECIAL(cc));
-    //mbptr = mbtab[depth] + code + cc;
-    //if (mbptr->lowerbound >= mbptr->upperbound)
-    //{
-      //break;
-    //}
-  //}
-        
+    
+  matchlength = (unsigned long) (qptr - qstart + 1);
+  qptr++;
 	if (matchlength <= maxdepth)
 	{
-		//mbptr = mbtab[matchlength] + code + cc;
-		//bwtbound.start = mbptr->lowerbound;
-		//bwtbound.end = mbptr->upperbound;
-		//code = code * alphasize + cc;
-		printf("matchlength=%lu, code=%lu\n",matchlength, code);
-		mbptr = mbtab[matchlength] + code + cc;
-		
+		//printf("--------------------------------------------------------------\n");
+		//printf("---%lu---code=%lu, cc=%u\n",matchlength, code, cc);
+				
+		//curSym = MRAEncMapSymbol(alphabet, cc);
+    //bwtbound2.start = bwtSeq->count[curSym];
+    //bwtbound2.end = bwtSeq->count[curSym+1];
+    //printf("---%lu---bwtbound2.start=%lu, bwtbound2.end=%lu\n",matchlength,bwtbound2.start, bwtbound2.end);
+    
+    mbptr = mbtab[matchlength] + code + cc;		// 这里时， code全为0， 主要看cc
 		bwtbound.start = mbptr->lowerbound;
 		bwtbound.end = mbptr->upperbound;
-		printf("bwtbound.start=%lu, bwtbound.end=%lu\n",bwtbound.start, bwtbound.end);
-		code = code * alphasize + cc;
-		
-		curSym = MRAEncMapSymbol(alphabet, cc);
-    bwtbound2.start = bwtSeq->count[curSym];
-    bwtbound2.end = bwtSeq->count[curSym+1];
-    printf("bwtbound2.start=%lu, bwtbound2.end=%lu\n",bwtbound2.start, bwtbound2.end);
+		//printf("---%lu---bwtbound.start=%lu, bwtbound.end=%lu\n",matchlength,bwtbound.start, bwtbound.end);
+    code = cc;
 	} 
 	else 
 	{
 		curSym = MRAEncMapSymbol(alphabet, cc);
 		bwtbound.start = bwtSeq->count[curSym];
 		bwtbound.end = bwtSeq->count[curSym+1];
+		//printf("---%lu---bwtbound3.start=%lu, bwtbound3.end=%lu\n",matchlength,bwtbound.start, bwtbound.end);
 	}
 
-  matchlength = (unsigned long) (qptr - qstart + 1);
-  qptr++;
+
+
 
   while (qptr < qend && bwtbound.start < bwtbound.end)
   {
@@ -1016,25 +996,23 @@ bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
 			return 0;
 		}
     
+    matchlength = (unsigned long) (qptr - qstart + 1);
 		if (matchlength <= maxdepth)
-		{
-		//	mbptr = mbtab[matchlength] + code + cc;
-		//	bwtbound.start = mbptr->lowerbound;
-		//	bwtbound.end = mbptr->upperbound;
-		//	code = code * alphasize + cc;
-			
-		printf("matchlength=%lu, code=%lu\n",matchlength, code);
-		mbptr = mbtab[matchlength] + code + cc;
-		
-		bwtbound.start = mbptr->lowerbound;
-		bwtbound.end = mbptr->upperbound;
-		printf("bwtbound.start=%lu, bwtbound.end=%lu\n",bwtbound.start, bwtbound.end);
-		code = code * alphasize + cc;
-		
-		curSym = MRAEncMapSymbol(alphabet, cc);
-    bwtbound2.start = bwtSeq->count[curSym];
-    bwtbound2.end = bwtSeq->count[curSym+1];
-    printf("bwtbound2.start=%lu, bwtbound2.end=%lu\n",bwtbound2.start, bwtbound2.end);
+		{		
+			//printf("---%lu---code=%lu, cc=%u\n",matchlength, code, cc);
+								
+			//curSym = MRAEncMapSymbol(alphabet, cc);
+			//seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
+			//																				 bwtbound.start,bwtbound.end);
+			//bwtbound2.start = bwtSeq->count[curSym] + seqpospair.a;
+			//bwtbound2.end = bwtSeq->count[curSym] + seqpospair.b;
+      //printf("---%lu---bwtbound2.start=%lu, bwtbound2.end=%lu, %lu, %lu\n",matchlength,bwtbound2.start, bwtbound2.end, seqpospair.a, seqpospair.b);
+            
+			code = code * alphasize + cc;	
+			mbptr = mbtab[matchlength] + code;		
+			bwtbound.start = mbptr->lowerbound;
+			bwtbound.end = mbptr->upperbound;
+			//printf("---%lu---bwtbound.start=%lu, bwtbound.end=%lu\n",matchlength,bwtbound.start, bwtbound.end);
 		} 
 		else 
 		{
@@ -1043,9 +1021,10 @@ bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
 																							 bwtbound.start,bwtbound.end);
 			bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
 			bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;
+			//printf("---%lu---code=%lu, cc=%u\n",matchlength, code, cc);
+			//printf("---%lu---bwtbound3.start=%lu, bwtbound3.end=%lu\n",matchlength,bwtbound.start, bwtbound.end);
 		}
 
-    matchlength = (unsigned long) (qptr - qstart + 1);
     /*
      * when the matchlength go beyond leastlength,
      * the general map process will be ended
@@ -1114,7 +1093,6 @@ bool gt_packedindexmaxmatchesusingprebwt(const BWTSeq *bwtSeq,
   GtUchar cc;
   const GtUchar *qptr;
   struct matchBound bwtbound;
-  struct matchBound bwtbound2;
   struct GtUlongPair seqpospair;
   Symbol curSym;
   unsigned long matchlength = 0;
@@ -1138,20 +1116,14 @@ bool gt_packedindexmaxmatchesusingprebwt(const BWTSeq *bwtSeq,
     return 0;
   }
 
+  matchlength = (unsigned long) (qptr - qstart + 1);
+  qptr++;
 	if (matchlength <= maxdepth)
 	{
-		printf("matchlength=%lu, code=%lu\n",matchlength, code);
-		mbptr = mbtab[matchlength] + code + cc;
-		
+    mbptr = mbtab[matchlength] + code + cc;
 		bwtbound.start = mbptr->lowerbound;
 		bwtbound.end = mbptr->upperbound;
-		printf("bwtbound.start=%lu, bwtbound.end=%lu\n",bwtbound.start, bwtbound.end);
-		code = code * alphasize + cc;
-		
-		curSym = MRAEncMapSymbol(alphabet, cc);
-    bwtbound2.start = bwtSeq->count[curSym];
-    bwtbound2.end = bwtSeq->count[curSym+1];
-    printf("bwtbound2.start=%lu, bwtbound2.end=%lu\n",bwtbound2.start, bwtbound2.end);
+    code = cc;
 	} 
 	else 
 	{
@@ -1160,9 +1132,6 @@ bool gt_packedindexmaxmatchesusingprebwt(const BWTSeq *bwtSeq,
     bwtbound.end = bwtSeq->count[curSym+1];
 	}
 
-  matchlength = (unsigned long) (qptr - qstart + 1);
-  qptr++;
-
   while (qptr < qend && bwtbound.start < bwtbound.end)
   {
     cc = *qptr;
@@ -1170,24 +1139,24 @@ bool gt_packedindexmaxmatchesusingprebwt(const BWTSeq *bwtSeq,
     {
       return 0;
     }
-    
-    if (matchlength <= maxdepth)
-		{
-			mbptr = mbtab[matchlength] + code + cc;
+
+    matchlength = (unsigned long) (qptr - qstart + 1);    
+		if (matchlength <= maxdepth)
+		{		           
+			code = code * alphasize + cc;	
+			mbptr = mbtab[matchlength] + code;		
 			bwtbound.start = mbptr->lowerbound;
 			bwtbound.end = mbptr->upperbound;
-			code = code * alphasize + cc;
 		} 
 		else 
 		{
-      curSym = MRAEncMapSymbol(alphabet, cc);
-      seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
-                                               bwtbound.start,bwtbound.end);
-      bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
-      bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;
+			curSym = MRAEncMapSymbol(alphabet, cc);
+			seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
+																							 bwtbound.start,bwtbound.end);
+			bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
+			bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;
 		}
 
-    matchlength = (unsigned long) (qptr - qstart + 1);
     if (matchlength == leastlength)
     {
       for (bwtboundthisline=bwtbound.start;\
