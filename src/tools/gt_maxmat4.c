@@ -143,7 +143,9 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
   
   /* -p for prebwt */
   option_p = gt_option_new_bool("p",
-      "use precomputed bwt-bounds",
+      "use precomputed bwt-bounds files (file type: pbt), which can "
+      "be precomputed by command 'gt prebwt'. If no pbt-file exists, it "
+      "will be computed automatically in normal process",
       &arguments->prebwt, false);
   gt_option_parser_add_option(op, option_p);
   
