@@ -107,17 +107,17 @@ if $gttestdata then
 					generatemummerresults(reffile,queryfile,"mum")
 				end
 				
-        Name "maxmat4 -mumref #{reffile}/#{queryfile} against mummer"
+        Name "maxmat4 -mumref #{reffile}/#{queryfile} (mummer)"
         Keywords "check_maxmat4_mumreference_with_mummer"
         Test do
           checkmaxmat4withmummer(reffile,queryfile,"mumreference")
         end
-        Name "maxmat4 -maxmatch #{reffile}/#{queryfile} against mummer"
+        Name "maxmat4 -maxmatch #{reffile}/#{queryfile} (mummer)"
         Keywords "check_maxmat4_maxmatch_with_mummer"
         Test do
           checkmaxmat4withmummer(reffile,queryfile,"maxmatch")
         end   
-        Name "maxmat4 -mum #{reffile}/#{queryfile} against mummer"
+        Name "maxmat4 -mum #{reffile}/#{queryfile} (mummer)"
         Keywords "check_maxmat4_mum_with_mummer"
         Test do
           checkmaxmat4withmummer(reffile,queryfile,"mum")
@@ -214,8 +214,8 @@ allfiles.each do |reffile|
   allfiles.each do |queryfile|
     [12,15,18,21,24].each do |minlength| 
 			if queryfile != reffile
-				Name "maxmat4 -l #{minlength} #{reffile}/#{queryfile} (repfind)"
-				Keywords "check_maxmat4_with_repfind"
+				Name "maxmat4 -l #{minlength} #{reffile}/#{queryfile} (repfind)" # actually is maxmat4 -maxmatch -l
+				Keywords "check_maxmat4_maxmatch_with_repfind"
 				Test do
 					#checkmaxmat4withrepfind("at1MB","U89959_genomic.fas",minlength)
 					checkmaxmat4withrepfind(reffile,queryfile,minlength)
