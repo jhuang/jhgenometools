@@ -91,7 +91,21 @@ then
 				 ${MC} ${SE} -keywords 'check_maxmat4_mum_with_mummer' \
 				 -gttestdata ${GTTESTDATA}				 
 		./testsuite.rb \
-         ${MC} ${SE} -keywords 'check_maxmat4_with_repfind' \
+         ${MC} ${SE} -keywords 'check_maxmat4_maxmatch_with_repfind' \
+         -gttestdata ${GTTESTDATA}
+    #./testsuite.rb \
+				 #${MC} ${SE} -keywords 'gt_maxmat4_prebwt_inputerror'
+		./testsuite.rb \
+				 ${MC} ${SE} -keywords 'check_maxmat4_mumreference_prebwt_with_mummer' \
+				 -gttestdata ${GTTESTDATA}
+		./testsuite.rb \
+				 ${MC} ${SE} -keywords 'check_maxmat4_maxmatch_prebwt_with_mummer' \
+				 -gttestdata ${GTTESTDATA}
+		./testsuite.rb \
+				 ${MC} ${SE} -keywords 'check_maxmat4_mum_prebwt_with_mummer' \
+				 -gttestdata ${GTTESTDATA}				 
+		./testsuite.rb \
+         ${MC} ${SE} -keywords 'check_maxmat4_maxmatch_prebwt_with_repfind' \
          -gttestdata ${GTTESTDATA}
 	fi
   cd ..
