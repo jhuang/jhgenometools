@@ -668,7 +668,7 @@ static bool isleftmaximal(const GtEncseq *encseq,
   if (subjectpos==0 || qstart==query ) {
     leftmaximal = true;
   } else {
-     GtUchar dbleftchar = gt_encseq_get_encoded_char(encseq,
+    GtUchar dbleftchar = gt_encseq_get_encoded_char(encseq,
                               subjectpos-1,
                               GT_READMODE_FORWARD);
     if (ISSPECIAL(dbleftchar) || dbleftchar != *(qstart-1) ) {
@@ -694,6 +694,7 @@ static unsigned long lcp(const GtEncseq *encseq,
                          const GtUchar *qend)
 {
   const GtUchar *qptr = qnewstart;
+  gt_assert(dbrightbound < totallength);
   GtUchar dbrightboundchar = gt_encseq_get_encoded_char(encseq,
                                            dbrightbound,
                                            GT_READMODE_FORWARD);
@@ -704,9 +705,13 @@ static unsigned long lcp(const GtEncseq *encseq,
   {
     qptr++;
     dbrightbound++;
-    dbrightboundchar = gt_encseq_get_encoded_char(encseq,
-                                   dbrightbound,
-                                   GT_READMODE_FORWARD);
+    /* gt_assert(dbrightbound < totallength); */
+    if (dbrightbound < totallength) 
+    {
+			dbrightboundchar = gt_encseq_get_encoded_char(encseq,
+																		 dbrightbound,
+																		 GT_READMODE_FORWARD);
+		}
   }
   return (unsigned long) (qptr-qnewstart);
 }
