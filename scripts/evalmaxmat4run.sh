@@ -57,7 +57,7 @@ mkpackedindex()
   dbfilename=$1
   dbfilepath=`code2file $dbfilename`
   shift  # so that one gets only the rest parameters from command line with $*
-  #printf "# RUN packedindex mkindex $dbfilename $*\n"
+  printf "# RUN packedindex mkindex $dbfilename $*\n"
   ${RUNNER} gt packedindex mkindex -bsize 10 $* -dir rev -db ${dbfilepath} -indexname pck -sprank -dna -ssp -des -sds -pl | egrep '# TIME overall'
 }
 

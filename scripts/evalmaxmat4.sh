@@ -12,35 +12,36 @@ fi
 
 
 dbfiles=(EcoliK12 Afumigatus Scerevisiae Dmelanogaster_2L Homosapiens_21)
-queryfiles=(EcoliO157H7 Anidulans Spombe Dpseudoobscura_2a3 Musmusculus_16)
+queryfiles=(EcoliO157H7 Anidulans Spombe Dpseudoobscura Musmusculus_16)
 
 
 export GT_MEM_BOOKKEEPING=on
 export GT_ENV_OPTIONS=-spacepeak
 
+largesequencesfile_path="/home/jiabin"
 code2file()
 {
   case $1 in
     EcoliK12)
-      echo "/home/jiabin/largesequences/EcoliK12.fa";;
+      echo "${largesequencesfile_path}/largesequences/EcoliK12.fa";;
     Afumigatus)
-      echo "/home/jiabin/largesequences/Afumigatus.fa";;
+      echo "${largesequencesfile_path}/largesequences/wgs.AAHF.1.fsa_nt";;
     Scerevisiae)
-      echo "/home/jiabin/largesequences/Scerevisiae.fa";;
+      echo "${largesequencesfile_path}/largesequences/wgs.ACVY.1.fsa_nt";;
     Dmelanogaster_2L)
-      echo "/home/jiabin/largesequences/Dmelanogaster_2L.fa";;
+      echo "${largesequencesfile_path}/largesequences/Dmelanogaster_2L.fa";;
     Homosapiens_21)
-      echo "/home/jiabin/largesequences/Homosapiens_21.fa";;
+      echo "${largesequencesfile_path}/largesequences/Homosapiens_21.fa";;
     EcoliO157H7)
-      echo "/home/jiabin/largesequences/EcoliO157H7.fa";;
+      echo "${largesequencesfile_path}/largesequences/EcoliO157H7.fa";;
     Anidulans)
-      echo "/home/jiabin/largesequences/Anidulans.fa";;
+      echo "${largesequencesfile_path}/largesequences/wgs.AACD.1.fsa_nt";;
     Spombe)
-      echo "/home/jiabin/largesequences/Spombe.fa";;
-    Dpseudoobscura_2a3)
-      echo "/home/jiabin/largesequences/Dpseudoobscura_2a3.fa";;
+      echo "${largesequencesfile_path}/largesequences/Spombe.fa";;
+    Dpseudoobscura)
+      echo "${largesequencesfile_path}/largesequences/wgs.AADE.1.fsa_nt";;
     Musmusculus_16)
-      echo "/home/jiabin/largesequences/Musmusculus_16.fa";;
+      echo "${largesequencesfile_path}/largesequences/Musmusculus_16.fa";;
     *)
       echo "$0: illegal filecode $1"
       exit 1;;
@@ -88,7 +89,7 @@ done
 echo "# DATE `date +%Y-%m-%d-%H:%M`"
 
 #matchoptions=( -mumreference -maxmatch -mum )
-matchoptions=( -mumreference )
+matchoptions=( -maxmatch )
 
 
 for (( i = 0 ; i < ${#dbfiles[@]} ; i++ ))
