@@ -202,10 +202,9 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   void *packedindex = NULL;
   const Mbtab **mbtab = NULL;
   unsigned int maxdepth = 0;
-
-  /* init the referencefile and queryfiles */
-  GtStr *referencefile = gt_str_new_cstr(argv[arg]);
-  GtStrArray *queryfiles = gt_str_array_new();
+  
+  GtStr *referencefile = NULL;
+  GtStrArray *queryfiles = NULL;
   
   GtProgressTimer *maxmat4progress = NULL;  
   if (gt_showtime_enabled() || arguments->showtime)
@@ -213,7 +212,11 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
     maxmat4progress = gt_progress_timer_new("finding maximal matches of some minimum length "
                                         "between a reference sequence and a query-sequence");
   }
-
+  
+  /* init the referencefile and queryfiles */
+  referencefile = gt_str_new_cstr(argv[arg]);
+  queryfiles = gt_str_array_new();
+  
   int idx;
   for (idx=arg+1; idx<argc; idx++)
   {
