@@ -65,10 +65,10 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
   gt_assert(arguments);
 
   op = gt_option_parser_new(
-      "[options] <reference-file> <query-files>[...]",
+      "[options] reference-indexname query-file-names",
       "Find and output (to stdout) the positions and length of all "
       "sufficiently long (unique) maximal matches of a substring in "
-      "<reference-file>(in format of specify packed index) and <query-file>. "
+      "reference-indexname (in format of packed index) and query-file-names. "
       "Match only the characters a, c, g, or t, "
       "they can be in upper or in lower case.");
   gt_option_parser_set_mailaddress(op,"<gt-users@genometools.org>");
