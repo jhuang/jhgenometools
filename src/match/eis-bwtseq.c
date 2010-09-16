@@ -941,7 +941,7 @@ bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
   GtUchar cc;
   const GtUchar *qptr;
   struct matchBound bwtbound;
-  //struct matchBound bwtbound2;
+  //  struct matchBound bwtbound2;
   struct GtUlongPair seqpospair;
   Symbol curSym;
   unsigned long matchlength = 0;
@@ -968,18 +968,18 @@ bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
   qptr++;
 	if (matchlength <= maxdepth)
 	{
-		//printf("--------------------------------------------------------------\n");
-		//printf("---%lu---code=%lu, cc=%u\n",matchlength, code, cc);
+		//  printf("--------------------------------------------------------------\n");
+		//  printf("---%lu---code=%lu, cc=%u\n",matchlength, code, cc);
 				
-		//curSym = MRAEncMapSymbol(alphabet, cc);
-    //bwtbound2.start = bwtSeq->count[curSym];
-    //bwtbound2.end = bwtSeq->count[curSym+1];
-    //printf("---%lu---bwtbound2.start=%lu, bwtbound2.end=%lu\n",matchlength,bwtbound2.start, bwtbound2.end);
+		//  curSym = MRAEncMapSymbol(alphabet, cc);
+    //  bwtbound2.start = bwtSeq->count[curSym];
+    //  bwtbound2.end = bwtSeq->count[curSym+1];
+    //  printf("---%lu---bwtbound2.start=%lu, bwtbound2.end=%lu\n",matchlength,bwtbound2.start, bwtbound2.end);
     
-    mbptr = mbtab[matchlength] + code + cc;		// 这里时， code全为0， 主要看cc
+    mbptr = mbtab[matchlength] + code + cc;		// in this point, code is equal 0, cc is different
 		bwtbound.start = mbptr->lowerbound;
 		bwtbound.end = mbptr->upperbound;
-		//printf("---%lu---bwtbound.start=%lu, bwtbound.end=%lu\n",matchlength,bwtbound.start, bwtbound.end);
+		//  printf("---%lu---bwtbound.start=%lu, bwtbound.end=%lu\n",matchlength,bwtbound.start, bwtbound.end);
     code = cc;
 	} 
 	else 
@@ -987,7 +987,7 @@ bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
 		curSym = MRAEncMapSymbol(alphabet, cc);
 		bwtbound.start = bwtSeq->count[curSym];
 		bwtbound.end = bwtSeq->count[curSym+1];
-		//printf("---%lu---bwtbound3.start=%lu, bwtbound3.end=%lu\n",matchlength,bwtbound.start, bwtbound.end);
+		//  printf("---%lu---bwtbound3.start=%lu, bwtbound3.end=%lu\n",matchlength,bwtbound.start, bwtbound.end);
 	}
 
 
@@ -1004,20 +1004,20 @@ bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
     matchlength = (unsigned long) (qptr - qstart + 1);
 		if (matchlength <= maxdepth)
 		{		
-			//printf("---%lu---code=%lu, cc=%u\n",matchlength, code, cc);
+			//  printf("---%lu---code=%lu, cc=%u\n",matchlength, code, cc);
 								
-			//curSym = MRAEncMapSymbol(alphabet, cc);
-			//seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
-			//																				 bwtbound.start,bwtbound.end);
-			//bwtbound2.start = bwtSeq->count[curSym] + seqpospair.a;
-			//bwtbound2.end = bwtSeq->count[curSym] + seqpospair.b;
-      //printf("---%lu---bwtbound2.start=%lu, bwtbound2.end=%lu, %lu, %lu\n",matchlength,bwtbound2.start, bwtbound2.end, seqpospair.a, seqpospair.b);
+			//  curSym = MRAEncMapSymbol(alphabet, cc);
+			//  seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
+			//  																				 bwtbound.start,bwtbound.end);
+			//  bwtbound2.start = bwtSeq->count[curSym] + seqpospair.a;
+			//  bwtbound2.end = bwtSeq->count[curSym] + seqpospair.b;
+      //  printf("---%lu---bwtbound2.start=%lu, bwtbound2.end=%lu, %lu, %lu\n",matchlength,bwtbound2.start, bwtbound2.end, seqpospair.a, seqpospair.b);
             
 			code = code * alphasize + cc;	
 			mbptr = mbtab[matchlength] + code;		
 			bwtbound.start = mbptr->lowerbound;
 			bwtbound.end = mbptr->upperbound;
-			//printf("---%lu---bwtbound.start=%lu, bwtbound.end=%lu\n",matchlength,bwtbound.start, bwtbound.end);
+			//  printf("---%lu---bwtbound.start=%lu, bwtbound.end=%lu\n",matchlength,bwtbound.start, bwtbound.end);
 		} 
 		else 
 		{
@@ -1026,8 +1026,8 @@ bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
 																							 bwtbound.start,bwtbound.end);
 			bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
 			bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;
-			//printf("---%lu---code=%lu, cc=%u\n",matchlength, code, cc);
-			//printf("---%lu---bwtbound3.start=%lu, bwtbound3.end=%lu\n",matchlength,bwtbound.start, bwtbound.end);
+			//  printf("---%lu---code=%lu, cc=%u\n",matchlength, code, cc);
+			//  printf("---%lu---bwtbound3.start=%lu, bwtbound3.end=%lu\n",matchlength,bwtbound.start, bwtbound.end);
 		}
 
     /*
