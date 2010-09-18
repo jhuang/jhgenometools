@@ -22,6 +22,8 @@
 #include "core/progress_timer_api.h"
 #include "core/showtime.h"
 
+#include "match/maxmat4-dfs.h"
+
 typedef struct {
   bool mum,
        mumreference,
@@ -257,7 +259,7 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   {
     /* load packed index from suffxiarray */
     packedindex = gt_loadvoidBWTSeqForSA(gt_str_get(referencefile),
-                                         &suffixarray,
+                                         alphabet,
                                          totallength,
                                          arguments->prebwt,  /* bool withpckbwt */
                                          err);
@@ -290,27 +292,34 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
       matchmode = GT_MATCHMODE_MAXMATCH;
     }
 
-    if (gt_findmum(suffixarray.encseq,
-                   packedindex, 
-                   /* if option prebwt is false -> mbtab is NULL and maxdepth is 0,
-                    * but it doesn't matter, because the both parameters 
-                    * won't be used later in this case */
-                   mbtab,
-                   maxdepth,
-                   totallength,
-                   alphabet,
-                   queryfiles,
-                   matchmode,
-                   arguments->leastlength,
-                   arguments->bothdirections,
-                   arguments->reversecomplement,
-                   arguments->showstring,
-                   arguments->showreversepositions,
-                   arguments->fourcolumn,
-                   arguments->showsequencelengths,
-                   arguments->prebwt,
-                   arguments->showtime,
-                   err) != 0)
+    //if (gt_findmum(suffixarray.encseq,
+                   //packedindex, 
+                   ///* if option prebwt is false -> mbtab is NULL and maxdepth is 0,
+                    //* but it doesn't matter because the both parameters 
+                    //* won't be used later in this case */
+                   //mbtab,
+                   //maxdepth,
+                   //totallength,
+                   //alphabet,
+                   //queryfiles,
+                   //matchmode,
+                   //arguments->leastlength,
+                   //arguments->bothdirections,
+                   //arguments->reversecomplement,
+                   //arguments->showstring,
+                   //arguments->showreversepositions,
+                   //arguments->fourcolumn,
+                   //arguments->showsequencelengths,
+                   //arguments->prebwt,
+                   //arguments->showtime,
+                   //err) != 0)
+    gt_pck_bitparallelism((const FMindex *)packedindex,
+                            suffixarray.encseq,
+                            gt_alphabet_num_of_chars(gt_encseq_alphabet(suffixarray.encseq)),
+                            totallength,
+                            maxmat4progress,
+                            logger,
+                            err);
     {
       haserr = true;
     }

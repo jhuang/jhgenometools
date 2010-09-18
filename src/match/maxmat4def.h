@@ -19,6 +19,7 @@
 
 #include "match/matchmode_api.h"
 #include "match/mbtab_api.h"
+#include "match/sarr-def.h"
 
 /*
   This file defines some constants and types for computing maximal
