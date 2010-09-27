@@ -39,7 +39,9 @@ int gt_findmum(const GtEncseq *encseq,
                bool fourcolumn,
                bool showsequencelengths,
                bool prebwt,
-               GT_UNUSED bool verbose,
+               bool showtime,
+               GtProgressTimer *timer,
+               GtLogger *logger,
                GtError *err);
 
 #endif

@@ -14,21 +14,19 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include <stdbool.h>
 #include <stdio.h>
 
-//#include "core/array2dim_api.h"
-#include "core/chardef.h"
-#include "core/divmodmul.h"
+//#include "core/chardef.h"
 #include "core/log_api.h"
 #include "core/logger.h"
 #include "core/stack-inlined.h"
 #include "core/unused_api.h"
 
 #include "match/eis-voiditf.h"
-
 #include "match/maxmat4-dfs.h"
+#include "initeqsvec.h"
 
+//#include "core/intbits.h"
 /*
   if (currentdepth > 1UL)
   {
@@ -40,65 +38,148 @@
     outcol->prefixofsuffixbits = mti->eqsvector[currentchar];
   }
 */
-int gt_pck_bitparallelism(const FMindex *index,
-                            GT_UNUSED const GtEncseq *encseq,
-                            unsigned long numofchars,
-                            unsigned long totallength,
-                            GtProgressTimer *timer,
-                            GtLogger *logger,
-                            GT_UNUSED GtError *err)
+      
+/*@unused@*/ static inline unsigned int gt_bitsequence_getpositions(GtBitsequence bs)
+{
+  unsigned int i;
+  GtBitsequence mask;
+
+  for (i=0, mask = GT_FIRSTBIT;
+       i < (unsigned int) GT_INTWORDSIZE;
+       i++, mask >>= 1)
+  {
+		if (bs & mask)
+		  return GT_INTWORDSIZE-i;
+  }
+  return -1;
+}  
+
+/** the function check if the mapped sequence is left maximal */
+static bool isleftmaximal(const GtEncseq *encseq,
+                         unsigned long subjectpos,
+                         const GtUchar *query,
+                         const GtUchar *qstart)
+{
+  bool leftmaximal = false;
+  if (subjectpos==0 || qstart==query ) {
+    leftmaximal = true;
+  } else {
+    GtUchar dbleftchar = gt_encseq_get_encoded_char(encseq,
+                              subjectpos-1,
+                              GT_READMODE_FORWARD);
+    if (ISSPECIAL(dbleftchar) || dbleftchar != *(qstart-1) ) {
+      leftmaximal = true;
+    }  else {
+      leftmaximal = false;
+    }
+  }
+  return leftmaximal;
+}
+
+/**
+ * the function calculate the long common prefix
+ * between reference sequence and query sequence
+ * from the qnewstart position.
+ * qnewstart position refer to the first position >= leastlength
+ * after general map-process with bwt
+ */
+//static unsigned long lcp(const GtEncseq *encseq,
+                         //unsigned long dbrightbound,
+                         //unsigned long totallength,
+                         //const GtUchar *qnewstart,
+                         //const GtUchar *qend)
+//{
+  //const GtUchar *qptr = qnewstart;
+  //gt_assert(dbrightbound < totallength);
+  //GtUchar dbrightboundchar = gt_encseq_get_encoded_char(encseq,
+                                           //dbrightbound,
+                                           //GT_READMODE_FORWARD);
+
+  //while (qptr < qend &&
+        //(dbrightbound < totallength) && !ISSPECIAL(dbrightboundchar) &&
+        //*qptr == dbrightboundchar )
+  //{
+    //qptr++;
+    //dbrightbound++;
+    ///* gt_assert(dbrightbound < totallength); */
+    //if (dbrightbound < totallength) 
+    //{
+			//dbrightboundchar = gt_encseq_get_encoded_char(encseq,
+																		 //dbrightbound,
+																		 //GT_READMODE_FORWARD);
+		//}
+  //}
+  //return (unsigned long) (qptr-qnewstart);
+//}
+                            
+int gt_pck_bitparallelism(const GtUchar *query,
+                          unsigned long querylen,
+                          const FMindex *index,
+                          const GtEncseq *encseq,
+                          unsigned long totallength,
+                          GT_UNUSED unsigned long leastlength,
+                          //Findmatchfunction findmatchfunction,
+                          GT_UNUSED Processmatchfunction processmatch,
+                          GT_UNUSED Showspecinfo *showspecinfo,
+                          bool showtime,
+                          GtProgressTimer *timer,
+                          GtLogger *logger,
+                          GT_UNUSED GtError *err)
 {
   int had_err = 0;
   GtStackMaxmat4Node stack;
-  Maxmat4Node root, current;
+  Maxmat4Node root, current, child;
   Mbtab *tmpmbtab;
   unsigned long *rangeOccs;
-  unsigned long resize = 64UL; /* XXX make this softcoded */
-  unsigned long /*stackdepth,*/ maxdepth;
+  unsigned long resize = 64UL; 
+  unsigned long maxdepth, rangesize, idx, num_of_rows;
+  unsigned long *eqsvector;
   
-  unsigned long rangesize, idx, num_of_rows;
-  unsigned int offset;
-  Maxmat4Node child;
-
-  rangeOccs = gt_calloc((size_t) GT_MULT2(numofchars), sizeof (*rangeOccs));
-  tmpmbtab = gt_calloc((size_t) (numofchars + 3), sizeof (*tmpmbtab ));
-  //numoffiles = gt_encseq_num_of_files(encseq);
-  //numofseq = gt_encseq_num_of_sequences(encseq);
+  char buffer1[GT_INTWORDSIZE+1], buffer2[GT_INTWORDSIZE+1];	
+  
+  GtUchar alphasize;
+  unsigned int numofchars;
+  numofchars = gt_alphabet_num_of_chars(gt_encseq_alphabet(encseq));
+  alphasize = (GtUchar) numofchars;
+  
+  
+  //struct matchBound bwtbound;
+  //struct GtUlongPair seqpospair;
+  //Symbol curSym;
+  //const MRAEnc *alphabet;
+  //alphabet = BWTSeqGetAlphabet(index);
+ 
+  
+  
+  alphasize = gt_alphabet_num_of_chars(gt_encseq_alphabet(encseq));
+  rangeOccs = gt_calloc((size_t) GT_MULT2(alphasize), sizeof (*rangeOccs));
+  tmpmbtab = gt_calloc((size_t) (alphasize + 3), sizeof (*tmpmbtab ));
+  eqsvector = gt_calloc(alphasize, sizeof (*eqsvector));
+  gt_initeqsvectorrev(eqsvector,(unsigned long) alphasize,
+                query,querylen);  /* why is rev-version used here? */
   
   GT_STACK_INIT(&stack, resize);
-  if (timer != NULL)
-  {
-    gt_progress_timer_start_new_state(timer,
-                                      "obtain special pos",
-                                      stdout);
-  }
   
-//  GT_STACK_NEXT_FREE(&stack,root);
-  
-//  root = gt_calloc(1, sizeof(Maxmat4Node));
-//  GT_STACK_PUSH(&stack, *root);
   root.depth = 0;
   root.lower = 0;
   root.upper = totallength + 1;
+  root.prefixofsuffixbits = ~0UL;
   GT_STACK_PUSH(&stack,root);
 
-  if (timer != NULL)
+  if (showtime)
   {
     gt_progress_timer_start_new_state(timer,
-                                      "traverse virtual tree",
+                                      "start to traverse tree",
                                       stdout);
   }
-  //stackdepth = 1UL;
+
   maxdepth = 0;
   while (!GT_STACK_ISEMPTY(&stack))
   {
-    //if (maxdepth < stackdepth)
-    //  maxdepth = stackdepth;
-    //current = stack.space + stack.nextfree - 1;
-
-    //GT_STACK_DECREMENTTOP(&stack);
-    //--stackdepth;
     current = GT_STACK_POP(&stack);
+    //printf("---pop---current.lower=%lu, current.upper=%lu, current.depth=%lu\n",current.lower,current.upper,current.depth);
+    if (maxdepth < current.depth)
+      maxdepth = current.depth;
 
     gt_assert(current.lower < current.upper);
     num_of_rows = current.upper - current.lower;
@@ -109,44 +190,106 @@ int gt_pck_bitparallelism(const FMindex *index,
                                                   index,
                                                   current.lower,
                                                   current.upper);
-    gt_assert(rangesize <= numofchars);
+    gt_assert(rangesize <= alphasize);
+    
 
-    printf("range size=%lu,current.lower=%lu,current.upper=%lu\n",rangesize,current.lower, current.upper);
-    offset = 0;
+
+    //printf("range size=%lu,current.lower=%lu,current.upper=%lu, alphazise=%lu\n",rangesize,current.lower, current.upper,alphasize);
+   // printf("------cc=%u\n",cc);
+    
     for (idx = 0; idx < rangesize; idx++)
     {
+	  //curSym = MRAEncMapSymbol(alphabet, (GtUchar)idx);
+    //seqpospair = BWTSeqTransformedPosPairOcc(index, curSym,
+                                             //bwtbound.start,bwtbound.end);
+    //bwtbound.start = index->count[curSym] + seqpospair.a;
+    //bwtbound.end = index->count[curSym] + seqpospair.b;
+    
+    
       gt_assert (tmpmbtab[idx].lowerbound <= tmpmbtab[idx].upperbound);
       gt_assert ((tmpmbtab[idx].upperbound - tmpmbtab[idx].lowerbound) <=
                 num_of_rows);
       num_of_rows -= (tmpmbtab[idx].upperbound - tmpmbtab[idx].lowerbound);
-      printf("------tmpmbtab[%lu].lowerbound=%lu, tmpmbtab[idx].upperbound=%lu\n",idx,tmpmbtab[idx].lowerbound,tmpmbtab[idx].upperbound);
+      
+      //printf("------tmpmbtab[%lu].lowerbound=%lu, tmpmbtab[idx].upperbound=%lu\n",idx,tmpmbtab[idx].lowerbound,tmpmbtab[idx].upperbound);
 
       if (tmpmbtab[idx].lowerbound != tmpmbtab[idx].upperbound)
-      {
-        if (tmpmbtab[idx].lowerbound + 1 ==
-            tmpmbtab[idx].upperbound)
-        { /* we found a leave on parent */
-            printf("---leaf---tmpmbtab[idx].upperbound=%lu,current.depth=%lu\n",tmpmbtab[idx].upperbound,current.depth);
-        } else
-        {
-            /* tmpmbtab[idx] is a branch of parent node */
-            //GT_STACK_NEXT_FREE(&stack,child);
-            
+      {      
+				    // 肯定有孩子，关于孩子是不是正确的， 就要看 bitpara 了。比如 atgct是他的孩子 
+				    /* tmpmbtab[idx] is a branch of parent node */            
             child.lower = tmpmbtab[idx].lowerbound;
             child.upper = tmpmbtab[idx].upperbound;
-            child.depth = current.depth + 1;
-            GT_STACK_PUSH(&stack,child);
-            printf("---push---child.lower=%lu, child.upper=%lu, child.depth=%lu\n",child.lower,child.upper,child.depth);
-            //stackdepth++;
-        }
+            child.depth = current.depth + 1;  
+						if (child.depth > 1UL)
+						{
+							child.prefixofsuffixbits
+								= current.prefixofsuffixbits &
+									(eqsvector[(GtUchar)idx] << (child.depth-1));
+						} else
+						{
+							child.prefixofsuffixbits = eqsvector[(GtUchar)idx];
+						}				
+						gt_bitsequence_tostring(buffer1,(GtBitsequence) current.prefixofsuffixbits);
+						gt_bitsequence_tostring(buffer2,(GtBitsequence) child.prefixofsuffixbits);
+						//printf("next(%s,%lu,depth=%lu)->%s\n",buffer1,idx,child.depth,buffer2);
+            if (child.prefixofsuffixbits != 0 /*&& child.depth<querylen*/) {
+              GT_STACK_PUSH(&stack,child);
+              //printf("---push---child.lower=%lu, child.upper=%lu, child.depth=%lu\n",child.lower,child.upper,child.depth);
+						} else {
+							// for option  mumreference
+							if ( (current.depth >= leastlength) && (current.lower + 1 == current.upper) ) {
+							  // because of unmatch of last character, match length = child.depth-1
+							  
+							  unsigned long subjectposthisline =\
+                gt_voidpackedfindfirstmatchconvert(index,
+                                                   current.lower,
+                                                   current.depth);
+                unsigned long querypos = querylen- gt_bitsequence_getpositions(current.prefixofsuffixbits);
+                if ( isleftmaximal(encseq,subjectposthisline,query,query+querypos) ) {                                   
+									printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",current.lower,current.upper,current.depth);
+									//printf("------i=%u\n",(unsigned int)querylen - gt_bitsequence_getpositions(current.prefixofsuffixbits));
+									//zerosontheright(current.prefixofsuffixbits);
+									/*
+									 * print the result
+									 */
+									processmatch(encseq,
+															 query,
+															 querypos,  /* querypos */
+															 querylen,
+															 current.depth,
+															 subjectposthisline,
+															 showspecinfo);
+							  }
+						  }
+						}
+        //if (current.depth + 1 >= leastlength)
+        //{ 
+					 //if (tmpmbtab[idx].lowerbound + 1 == tmpmbtab[idx].upperbound) {
+					 //if (current.depth + 1 >= leastlength) {
+						 //leaf.lower = tmpmbtab[idx].lowerbound;
+             //leaf.upper = tmpmbtab[idx].upperbound;
+             //leaf.depth = current.depth + 1;
+					   /* we found a leave on parent */
+             //printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",tmpmbtab[idx].lowerbound,tmpmbtab[idx].upperbound,leaf.depth);		
+             //printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",child.lower,child.upper,child.depth);			 
+					 //}
+        //} else
+        //{
+
+        //}
       }
     }
 
 
   }
+  //printf("---maxdepth---maxdepth=%lu\n",maxdepth);
+  //    gt_alphabet_decode_seq_to_fp(gt_encseq_alphabet(encseq),stdout,
+  //                               query,4);
+  //  (void) putchar('\n');
   gt_logger_log(logger, "max stack depth = %lu", maxdepth);
   GT_STACK_DELETE(&stack);
   gt_free(rangeOccs);
   gt_free(tmpmbtab);
+  gt_free(eqsvector);
   return had_err;
 }

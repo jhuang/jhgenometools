@@ -17,26 +17,30 @@
 #ifndef MAXMAT4_DFS_H
 #define MAXMAT4_DFS_H
 
-#include <stdbool.h>
-
 #include "core/stack-inlined.h"
-
 #include "match/eis-voiditf.h"
 
 typedef struct {
   unsigned long depth,
+                prefixofsuffixbits,
                 lower,
                 upper;
 } Maxmat4Node;
 
 GT_STACK_DECLARESTRUCT(Maxmat4Node, 256UL);
 
-int gt_pck_bitparallelism(const FMindex *index,
-                            const GtEncseq *encseq,
-                            unsigned long numofchars,
-                            unsigned long totallength,
-                            GtProgressTimer *timer,
-                            GT_UNUSED GtLogger *logger,
-                            GT_UNUSED GtError *err);
+int gt_pck_bitparallelism(const GtUchar *query,
+                          unsigned long querylen,
+                          const FMindex *index,
+                          const GtEncseq *encseq,
+                          unsigned long totallength,
+                          unsigned long leastlength,
+                          //Findmatchfunction findmatchfunction,
+                          Processmatchfunction processmatch,
+                          Showspecinfo *showspecinfo,
+                          bool showtime,
+                          GtProgressTimer *timer,
+                          GtLogger *logger,
+                          GT_UNUSED GtError *err);
 
 #endif

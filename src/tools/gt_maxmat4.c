@@ -292,34 +292,36 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
       matchmode = GT_MATCHMODE_MAXMATCH;
     }
 
-    //if (gt_findmum(suffixarray.encseq,
-                   //packedindex, 
-                   ///* if option prebwt is false -> mbtab is NULL and maxdepth is 0,
-                    //* but it doesn't matter because the both parameters 
-                    //* won't be used later in this case */
-                   //mbtab,
-                   //maxdepth,
-                   //totallength,
-                   //alphabet,
-                   //queryfiles,
-                   //matchmode,
-                   //arguments->leastlength,
-                   //arguments->bothdirections,
-                   //arguments->reversecomplement,
-                   //arguments->showstring,
-                   //arguments->showreversepositions,
-                   //arguments->fourcolumn,
-                   //arguments->showsequencelengths,
-                   //arguments->prebwt,
-                   //arguments->showtime,
-                   //err) != 0)
-    gt_pck_bitparallelism((const FMindex *)packedindex,
-                            suffixarray.encseq,
-                            gt_alphabet_num_of_chars(gt_encseq_alphabet(suffixarray.encseq)),
-                            totallength,
-                            maxmat4progress,
-                            logger,
-                            err);
+    if (gt_findmum(suffixarray.encseq,
+                   packedindex, 
+                   /* if option prebwt is false -> mbtab is NULL and maxdepth is 0,
+                    * but it doesn't matter because the both parameters 
+                    * won't be used later in this case */
+                   mbtab,
+                   maxdepth,
+                   totallength,
+                   alphabet,
+                   queryfiles,
+                   matchmode,
+                   arguments->leastlength,
+                   arguments->bothdirections,
+                   arguments->reversecomplement,
+                   arguments->showstring,
+                   arguments->showreversepositions,
+                   arguments->fourcolumn,
+                   arguments->showsequencelengths,
+                   arguments->prebwt,
+                   arguments->showtime,
+                   maxmat4progress,
+                   logger,
+                   err) != 0)
+    //gt_pck_bitparallelism((const FMindex *)packedindex,
+                            //suffixarray.encseq,
+                            //gt_alphabet_num_of_chars(gt_encseq_alphabet(suffixarray.encseq)),
+                            //totallength,
+                            //maxmat4progress,
+                            //logger,
+                            //err);
     {
       haserr = true;
     }

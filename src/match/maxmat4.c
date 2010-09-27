@@ -19,6 +19,7 @@
 #include "core/format64.h"
 #include "match/eis-voiditf.h"
 #include "extended/reverse.h"
+#include "maxmat4-dfs.h"
 
 /*
   This file contains functions to appropriately call the function
@@ -319,6 +320,9 @@ static void matchposinsinglesequence(uint64_t unitnum,
                                       Findmatchfunction findmatchfunction,
                                       Processmatchfunction processmatch,
                                       Matchprocessinfo *matchprocessinfo,
+                                      bool showtime,
+                                      GtProgressTimer *timer,
+                                      GtLogger *logger,
                                       GtError *err)
 {
   const GtUchar *qptr;
@@ -343,7 +347,21 @@ static void matchposinsinglesequence(uint64_t unitnum,
     {
       continue;
     };
-  }
+  }    
+  gt_pck_bitparallelism(query,
+                        querylen,
+                        (const FMindex *)matchprocessinfo->packedindex,
+                        matchprocessinfo->encseq,
+                        matchprocessinfo->totallength,
+                        (matchprocessinfo->leastlength).valueunsignedlong,
+                        //findmatchfunction,
+                        processmatch,
+												matchprocessinfo->showspecinfo,
+												showtime,
+												timer,
+								        logger,
+                        err);
+																				
 
   if (matchprocessinfo->matchmode == GT_MATCHMODE_MUM)
   {
@@ -353,6 +371,7 @@ static void matchposinsinglesequence(uint64_t unitnum,
                       err);
       gt_array_reset(matchprocessinfo->showspecinfo->mumcandtab);
   }
+  
 }
 
 int gt_findmum(const GtEncseq *encseq,
@@ -371,7 +390,9 @@ int gt_findmum(const GtEncseq *encseq,
                 bool fourcolumn,
                 bool showsequencelengths,
                 bool prebwt,
-                GT_UNUSED bool verbose,
+                bool showtime,
+                GtProgressTimer *timer,
+                GtLogger *logger,
                 GtError *err)
 {
   Matchprocessinfo matchprocessinfo;
@@ -459,6 +480,9 @@ int gt_findmum(const GtEncseq *encseq,
                                  findmatchfunction,
                                  processmatch,
                                  &matchprocessinfo,
+                                 showtime,
+                                 timer,
+                                 logger,
                                  err);
       }
       if ( reversecomplement || bothdirections )
@@ -492,6 +516,9 @@ int gt_findmum(const GtEncseq *encseq,
                                  findmatchfunction,
                                  processmatch,
                                  &matchprocessinfo,
+                                 showtime,
+                                 timer,
+                                 logger,
                                  err);
 
         gt_free(revcompquery);
