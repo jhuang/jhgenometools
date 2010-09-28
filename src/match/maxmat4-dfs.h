@@ -25,6 +25,7 @@ typedef struct {
                 prefixofsuffixbits,
                 lower,
                 upper;
+  bool isvisited;              
 } Maxmat4Node;
 
 GT_STACK_DECLARESTRUCT(Maxmat4Node, 256UL);
@@ -36,6 +37,7 @@ int gt_pck_bitparallelism(const GtUchar *query,
                           unsigned long totallength,
                           unsigned long leastlength,
                           //Findmatchfunction findmatchfunction,
+                          const GtMatchmode matchmode,
                           Processmatchfunction processmatch,
                           Showspecinfo *showspecinfo,
                           bool showtime,

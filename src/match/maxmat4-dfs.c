@@ -39,20 +39,23 @@
   }
 */
       
-/*@unused@*/ static inline unsigned int gt_bitsequence_getpositions(GtBitsequence bs)
-{
-  unsigned int i;
-  GtBitsequence mask;
+      
+///*@unused@*/ static inline unsigned int gt_bitsequence_getpositions(GtArray *int_array, GtBitsequence bs)
+//{
+  //unsigned int i;
+  //GtBitsequence mask;
 
-  for (i=0, mask = GT_FIRSTBIT;
-       i < (unsigned int) GT_INTWORDSIZE;
-       i++, mask >>= 1)
-  {
-		if (bs & mask)
-		  return GT_INTWORDSIZE-i;
-  }
-  return -1;
-}  
+  //for (i=0, mask = GT_FIRSTBIT;
+       //i < (unsigned int) GT_INTWORDSIZE;
+       //i++, mask >>= 1)
+  //{
+		//if (bs & mask) {
+		  //gt_array_add(int_array, GT_INTWORDSIZE-i);
+		  //return GT_INTWORDSIZE-i;
+		//}
+  //}
+  //return -1;
+//}  
 
 /** the function check if the mapped sequence is left maximal */
 static bool isleftmaximal(const GtEncseq *encseq,
@@ -119,6 +122,7 @@ int gt_pck_bitparallelism(const GtUchar *query,
                           unsigned long totallength,
                           GT_UNUSED unsigned long leastlength,
                           //Findmatchfunction findmatchfunction,
+                          const GtMatchmode matchmode,
                           GT_UNUSED Processmatchfunction processmatch,
                           GT_UNUSED Showspecinfo *showspecinfo,
                           bool showtime,
@@ -142,16 +146,6 @@ int gt_pck_bitparallelism(const GtUchar *query,
   numofchars = gt_alphabet_num_of_chars(gt_encseq_alphabet(encseq));
   alphasize = (GtUchar) numofchars;
   
-  
-  //struct matchBound bwtbound;
-  //struct GtUlongPair seqpospair;
-  //Symbol curSym;
-  //const MRAEnc *alphabet;
-  //alphabet = BWTSeqGetAlphabet(index);
- 
-  
-  
-  alphasize = gt_alphabet_num_of_chars(gt_encseq_alphabet(encseq));
   rangeOccs = gt_calloc((size_t) GT_MULT2(alphasize), sizeof (*rangeOccs));
   tmpmbtab = gt_calloc((size_t) (alphasize + 3), sizeof (*tmpmbtab ));
   eqsvector = gt_calloc(alphasize, sizeof (*eqsvector));
@@ -194,18 +188,11 @@ int gt_pck_bitparallelism(const GtUchar *query,
     
 
 
-    //printf("range size=%lu,current.lower=%lu,current.upper=%lu, alphazise=%lu\n",rangesize,current.lower, current.upper,alphasize);
+    //printf("range size=%lu,current.lower=%lu,current.upper=%lu, alphazise=%u\n",rangesize,current.lower, current.upper,alphasize);
    // printf("------cc=%u\n",cc);
     
     for (idx = 0; idx < rangesize; idx++)
-    {
-	  //curSym = MRAEncMapSymbol(alphabet, (GtUchar)idx);
-    //seqpospair = BWTSeqTransformedPosPairOcc(index, curSym,
-                                             //bwtbound.start,bwtbound.end);
-    //bwtbound.start = index->count[curSym] + seqpospair.a;
-    //bwtbound.end = index->count[curSym] + seqpospair.b;
-    
-    
+    {    
       gt_assert (tmpmbtab[idx].lowerbound <= tmpmbtab[idx].upperbound);
       gt_assert ((tmpmbtab[idx].upperbound - tmpmbtab[idx].lowerbound) <=
                 num_of_rows);
@@ -213,10 +200,14 @@ int gt_pck_bitparallelism(const GtUchar *query,
       
       //printf("------tmpmbtab[%lu].lowerbound=%lu, tmpmbtab[idx].upperbound=%lu\n",idx,tmpmbtab[idx].lowerbound,tmpmbtab[idx].upperbound);
 
-      if (tmpmbtab[idx].lowerbound != tmpmbtab[idx].upperbound)
+      bool currentatend = ( (current.prefixofsuffixbits != 0) && (totallength==(gt_voidpackedfindfirstmatchconvert(index,current.lower,current.depth)+current.depth)) );
+      if (currentatend) {
+				printf("---currentatend---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",current.lower,current.upper,current.depth);
+			}
+      if ( (tmpmbtab[idx].lowerbound != tmpmbtab[idx].upperbound) )
       {      
 				    // 肯定有孩子，关于孩子是不是正确的， 就要看 bitpara 了。比如 atgct是他的孩子 
-				    /* tmpmbtab[idx] is a branch of parent node */            
+				    /* tmpmbtab[idx] is a branch of parent node */           
             child.lower = tmpmbtab[idx].lowerbound;
             child.upper = tmpmbtab[idx].upperbound;
             child.depth = current.depth + 1;  
@@ -232,51 +223,123 @@ int gt_pck_bitparallelism(const GtUchar *query,
 						gt_bitsequence_tostring(buffer1,(GtBitsequence) current.prefixofsuffixbits);
 						gt_bitsequence_tostring(buffer2,(GtBitsequence) child.prefixofsuffixbits);
 						//printf("next(%s,%lu,depth=%lu)->%s\n",buffer1,idx,child.depth,buffer2);
-            if (child.prefixofsuffixbits != 0 /*&& child.depth<querylen*/) {
-              GT_STACK_PUSH(&stack,child);
-              //printf("---push---child.lower=%lu, child.upper=%lu, child.depth=%lu\n",child.lower,child.upper,child.depth);
-						} else {
-							// for option  mumreference
-							if ( (current.depth >= leastlength) && (current.lower + 1 == current.upper) ) {
-							  // because of unmatch of last character, match length = child.depth-1
-							  
-							  unsigned long subjectposthisline =\
-                gt_voidpackedfindfirstmatchconvert(index,
-                                                   current.lower,
-                                                   current.depth);
-                unsigned long querypos = querylen- gt_bitsequence_getpositions(current.prefixofsuffixbits);
-                if ( isleftmaximal(encseq,subjectposthisline,query,query+querypos) ) {                                   
-									printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",current.lower,current.upper,current.depth);
-									//printf("------i=%u\n",(unsigned int)querylen - gt_bitsequence_getpositions(current.prefixofsuffixbits));
-									//zerosontheright(current.prefixofsuffixbits);
-									/*
-									 * print the result
-									 */
-									processmatch(encseq,
-															 query,
-															 querypos,  /* querypos */
-															 querylen,
-															 current.depth,
-															 subjectposthisline,
-															 showspecinfo);
-							  }
-						  }
-						}
-        //if (current.depth + 1 >= leastlength)
-        //{ 
-					 //if (tmpmbtab[idx].lowerbound + 1 == tmpmbtab[idx].upperbound) {
-					 //if (current.depth + 1 >= leastlength) {
-						 //leaf.lower = tmpmbtab[idx].lowerbound;
-             //leaf.upper = tmpmbtab[idx].upperbound;
-             //leaf.depth = current.depth + 1;
-					   /* we found a leave on parent */
-             //printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",tmpmbtab[idx].lowerbound,tmpmbtab[idx].upperbound,leaf.depth);		
-             //printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",child.lower,child.upper,child.depth);			 
-					 //}
-        //} else
-        //{
+					 
+						/* if no corresponding match finds in query or it reaches the end of reference, print the results out */
+						if ( (child.prefixofsuffixbits != 0) && (totallength==(gt_voidpackedfindfirstmatchconvert(index,child.lower,child.depth)+child.depth)) ) {
+							GT_STACK_PUSH(&stack,child);		
+							//printf("---push1---child.lower=%lu, child.upper=%lu, child.depth=%lu\n",child.lower,child.upper,child.depth);		
+            } else if (child.prefixofsuffixbits == 0) {
+							if (matchmode == GT_MATCHMODE_MAXMATCH) 
+							{
+								// for option maxmatch
+								if (current.depth==leastlength && current.isvisited==false) {
 
-        //}
+									//unsigned long querypos = querylen - gt_bitsequence_getpositions(current.prefixofsuffixbits);
+									//if ( current.isvisited==false ) {  
+										current.isvisited = true;										                                 
+										//printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu,  tmpmbtab[idx].lowerbound=%lu, tmpmbtab[idx].upperbound=%lu\n",current.lower,current.upper,current.depth, tmpmbtab[idx].lowerbound,tmpmbtab[idx].upperbound);
+
+
+										unsigned long bwtboundthisline;
+										for (bwtboundthisline=current.lower;bwtboundthisline < current.upper; bwtboundthisline++)
+										{								
+											//unsigned long subjectposthisline =
+											//gt_voidpackedfindfirstmatchconvert(index,
+																												 //bwtboundthisline,
+																												 //current.depth);
+
+											//if ( isleftmaximal(encseq,subjectposthisline,query,qstart) ) {
+												///* every line moves forwards */
+												//unsigned long matchlengththisline = matchlength;
+
+												///*
+												 //* calculate long common prefix for every line
+												 //* between this reference sequence snippet
+												 //* from (subjectposthisline + matchlengththisline)
+												 //* against query sequence from qptr+1
+												 //*/
+												//unsigned long additionalmatchlengththisline =
+																								//lcp(encseq,
+																										//subjectposthisline + matchlengththisline,
+																										//totallength,
+																										//qptr+1,
+																										//qend);
+												//matchlengththisline += additionalmatchlengththisline;
+
+												///*
+												 //* print the result
+												 //*/
+												//processmatch(encseq,
+																		 //query,
+																		 //(unsigned long) (qstart-query),  /* querypos */
+																		 //(unsigned long) (qend-query),
+																		 //matchlengththisline,
+																		 //subjectposthisline,
+																		 //showspecinfo);
+											//}
+										/*
+										 * print the result
+										 */
+										//processmatch(encseq,
+																 //query,
+																 //querypos,  /* querypos */
+																 //querylen,
+																 //current.depth,
+																 //subjectposthisline,
+																 //showspecinfo);
+										}
+									//}
+									
+								
+								}
+							} 
+							else
+							{
+								// for option mumreference or mum
+								if ( (current.depth >= leastlength) && current.isvisited==false && (current.lower + 1 == current.upper) ) {
+									current.isvisited = true;
+									// because of unmatch of last character, match length = child.depth-1
+									printf("%s\n","----------------------------");
+									//printf("next(%s,%lu,depth=%lu)->%s\n",buffer1,idx,child.depth,buffer2);
+									unsigned long subjectpos =\
+									gt_voidpackedfindfirstmatchconvert(index,
+																										 current.lower,
+																										 current.depth);
+																										 
+									// comparing the unique subject position with possible more than 1 query start position										
+									unsigned int i;
+									GtBitsequence mask;
+
+									for (i=0, mask = GT_FIRSTBIT;
+											 i < (unsigned int) GT_INTWORDSIZE;
+											 i++, mask >>= 1)
+									{
+										if (current.prefixofsuffixbits & mask) {
+											unsigned long querypos = querylen - (GT_INTWORDSIZE-i);
+											if ( isleftmaximal(encseq,subjectpos,query,query+querypos) ) {                                   
+												printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",current.lower,current.upper,current.depth);
+												//printf("------i=%u\n",(unsigned int)querylen - gt_bitsequence_getpositions(current.prefixofsuffixbits));
+												//zerosontheright(current.prefixofsuffixbits);
+												/*
+												 * print the result
+												 */
+												processmatch(encseq,
+																		 query,
+																		 querypos,  /* querypos */
+																		 querylen,
+																		 current.depth,
+																		 subjectpos,
+																		 showspecinfo);
+											}
+										}
+									}													
+								}
+						  }
+						} else {
+							GT_STACK_PUSH(&stack,child);
+              //printf("---push---child.lower=%lu, child.upper=%lu, child.depth=%lu\n",child.lower,child.upper,child.depth);
+						}
+						
       }
     }
 
