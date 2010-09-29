@@ -25,9 +25,7 @@ typedef struct {
                 prefixofsuffixbits,
                 lower,
                 upper,
-                idx;
-  bool isvisited;    
-  //bool idx;  /* match is extensible, that is, it is not right maximal */          
+                idx;       
 } Maxmat4Node;
 
 GT_STACK_DECLARESTRUCT(Maxmat4Node, 256UL);

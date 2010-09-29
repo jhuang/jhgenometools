@@ -26,48 +26,6 @@
 #include "match/maxmat4-dfs.h"
 #include "initeqsvec.h"
 
-//#include "core/intbits.h"
-/*
-  if (currentdepth > 1UL)
-  {
-    outcol->prefixofsuffixbits
-      = incol->prefixofsuffixbits &
-        (mti->eqsvector[currentchar] >> (currentdepth-1));
-  } else
-  {
-    outcol->prefixofsuffixbits = mti->eqsvector[currentchar];
-  }
-*/
-      
-      
-///*@unused@*/ static inline unsigned int gt_bitsequence_getpositions(GtArray *int_array, GtBitsequence bs)
-//{
-  //unsigned int i;
-  //GtBitsequence mask;
-
-  //for (i=0, mask = GT_FIRSTBIT;
-       //i < (unsigned int) GT_INTWORDSIZE;
-       //i++, mask >>= 1)
-  //{
-		//if (bs & mask) {
-		  //gt_array_add(int_array, GT_INTWORDSIZE-i);
-		  //return GT_INTWORDSIZE-i;
-		//}
-  //}
-  //return -1;
-//}  
-
-//static unsigned int getbitnumofone(unsigned long nvalue)
-//{
-  //unsigned int nbitnum = 0;
-  //while(0 < nvalue)
-  //{
-    //nvalue &=(nvalue - 1);
-    //nbitnum++;
-  //}
-  //return nbitnum;
-//}
-
 /** the function check if the mapped sequence is left maximal */
 static bool isleftmaximal(const GtEncseq *encseq,
                          unsigned long subjectpos,
@@ -89,42 +47,6 @@ static bool isleftmaximal(const GtEncseq *encseq,
   }
   return leftmaximal;
 }
-
-/**
- * the function calculate the long common prefix
- * between reference sequence and query sequence
- * from the qnewstart position.
- * qnewstart position refer to the first position >= leastlength
- * after general map-process with bwt
- */
-//static unsigned long lcp(const GtEncseq *encseq,
-                         //unsigned long dbrightbound,
-                         //unsigned long totallength,
-                         //const GtUchar *qnewstart,
-                         //const GtUchar *qend)
-//{
-  //const GtUchar *qptr = qnewstart;
-  //gt_assert(dbrightbound < totallength);
-  //GtUchar dbrightboundchar = gt_encseq_get_encoded_char(encseq,
-                                           //dbrightbound,
-                                           //GT_READMODE_FORWARD);
-
-  //while (qptr < qend &&
-        //(dbrightbound < totallength) && !ISSPECIAL(dbrightboundchar) &&
-        //*qptr == dbrightboundchar )
-  //{
-    //qptr++;
-    //dbrightbound++;
-    ///* gt_assert(dbrightbound < totallength); */
-    //if (dbrightbound < totallength) 
-    //{
-			//dbrightboundchar = gt_encseq_get_encoded_char(encseq,
-																		 //dbrightbound,
-																		 //GT_READMODE_FORWARD);
-		//}
-  //}
-  //return (unsigned long) (qptr-qnewstart);
-//}
                             
 int gt_pck_bitparallelism(const GtUchar *query,
                           unsigned long querylen,
@@ -202,23 +124,21 @@ int gt_pck_bitparallelism(const GtUchar *query,
     //printf("range size=%lu,current.lower=%lu,current.upper=%lu, alphazise=%u\n",rangesize,current.lower, current.upper,alphasize);
    // printf("------cc=%u\n",cc);
     
-		// ====== currentatend ========
+		/* node current is now at the end of reference */
 		bool currentatend = ( (current.prefixofsuffixbits != 0) && (totallength==(gt_voidpackedfindfirstmatchconvert(index,current.lower,current.depth)+current.depth)) );
 		if (currentatend) {
-			printf("###currentatend###lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",current.lower,current.upper,current.depth);
+			////printf("-------------###currentatend###lowerbound=%lu,upperbound=%lu,leaf.depth=%lu------------------\n",current.lower,current.upper,current.depth);
 							/* process for pop is following */
 							if (matchmode == GT_MATCHMODE_MAXMATCH) 
 							{
 								/* for option maxmatch */								
-								if ( current.depth>=leastlength /*&& current.isvisited==false*/ ) {
-									// because of unmatch of last character, match length = child.depth-1
-									printf("%s\n","----------------------------");
+								if ( current.depth>=leastlength ) {
 									                                  
                   /* 三次turn, 每次6个, 中间那一次全军覆没，因为那一次的 child.prefixofsuffixbits ！＝0， 有子 */
 									unsigned long bwtboundthisline;
 									for (bwtboundthisline=current.lower;bwtboundthisline < current.upper; bwtboundthisline++)
 									{	
-										printf("bwtboundthisline=%lu\n",bwtboundthisline );
+										////printf("bwtboundthisline=%lu\n",bwtboundthisline );
 										if ( SEPARATOR == gt_bwtseqgetsymbol(bwtboundthisline, index) )	
 										{					
 											unsigned long subjectposthisline =
@@ -226,7 +146,7 @@ int gt_pck_bitparallelism(const GtUchar *query,
 																												 bwtboundthisline,
 																												 current.depth);
 																											 
-											// comparing the unique subject position with possible more than 1 query start position										
+											/* comparing the unique subject position with possible more than 1 query start position */										
 											unsigned int i;
 											GtBitsequence mask;
 											for (i=0, mask = GT_FIRSTBIT;
@@ -236,9 +156,8 @@ int gt_pck_bitparallelism(const GtUchar *query,
 												if (current.prefixofsuffixbits & mask) {
 													unsigned long querypos = querylen - (GT_INTWORDSIZE-i);
 													if ( isleftmaximal(encseq,subjectposthisline,query,query+querypos) ) {                                   
-														printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",current.lower,current.upper,current.depth);
-														//printf("------i=%u\n",(unsigned int)querylen - gt_bitsequence_getpositions(current.prefixofsuffixbits));
-														//zerosontheright(current.prefixofsuffixbits);
+														////printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",current.lower,current.upper,current.depth);
+
 														/*
 														 * print the result
 														 */
@@ -253,13 +172,44 @@ int gt_pck_bitparallelism(const GtUchar *query,
 												}
 											}
 									  }											
-									}
-									//current.isvisited = true;													
+									}												
 								}
 							} 
 							else
 							{
 								/* for option mumreference or mum */
+							  if ( (current.depth >= leastlength) && (current.lower + 1 == current.upper) && (SEPARATOR==gt_bwtseqgetsymbol(current.lower,index))	) {
+
+									unsigned long subjectpos =\
+									gt_voidpackedfindfirstmatchconvert(index,
+																										 current.lower,
+																										 current.depth);
+																										 
+									/* comparing the unique subject position with possible more than 1 query start position	*/									
+									unsigned int i;
+									GtBitsequence mask;
+									for (i=0, mask = GT_FIRSTBIT;
+											 i < (unsigned int) GT_INTWORDSIZE;
+											 i++, mask >>= 1)
+									{
+										if (current.prefixofsuffixbits & mask) {
+											unsigned long querypos = querylen - (GT_INTWORDSIZE-i);
+											if ( isleftmaximal(encseq,subjectpos,query,query+querypos) ) {                                   
+												////printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",current.lower,current.upper,current.depth);
+												/*
+												 * print or save the result
+												 */
+												processmatch(encseq,
+																		 query,
+																		 querypos,  /* querypos */
+																		 querylen,
+																		 current.depth,
+																		 subjectpos,
+																		 showspecinfo);
+											}
+										}
+									}												
+								}
 						  }
 		}
     for (idx = 0; idx < rangesize; idx++)
@@ -298,23 +248,23 @@ int gt_pck_bitparallelism(const GtUchar *query,
 						if ( (child.prefixofsuffixbits != 0) && (totallength==(gt_voidpackedfindfirstmatchconvert(index,child.lower,child.depth)+child.depth)) ) {
 							
 							GT_STACK_PUSH(&stack,child);		
-							//printf("---push1---child.lower=%lu, child.upper=%lu, child.depth=%lu\n",child.lower,child.upper,child.depth);		
+							//printf("---push1---child.lower=%lu, child.upper=%lu, child.depth=%lu\n",child.lower,child.upper,child.depth);	
+								
             } else if (child.prefixofsuffixbits == 0) {  /* in query with idx is not extensible */
 							/* process for pop is following */
+							
+							////printf("-------------###normal###lowerbound=%lu,upperbound=%lu,leaf.depth=%lu--------------\n",current.lower,current.upper,current.depth);
 							if (matchmode == GT_MATCHMODE_MAXMATCH) 
 							{
 								/* for option maxmatch */								
-								if ( current.depth>=leastlength /*&& current.isvisited==false*/ ) {
-									// because of unmatch of last character, match length = child.depth-1
-									printf("%s\n","----------------------------");
-									printf("next(%s,%lu,depth=%lu)->%s\n",buffer1,idx,child.depth,buffer2);
-									
-                                        
+								if ( current.depth>=leastlength ) {
+									////printf("next(%s,%lu,depth=%lu)->%s\n",buffer1,idx,child.depth,buffer2);
+									                              
                   /* 三次turn, 每次6个, 中间那一次全军覆没，因为那一次的 child.prefixofsuffixbits ！＝0， 有子 */
 									unsigned long bwtboundthisline;
 									for (bwtboundthisline=current.lower;bwtboundthisline < current.upper; bwtboundthisline++)
 									{	
-										printf("bwtboundthisline=%lu\n",bwtboundthisline );
+										////printf("bwtboundthisline=%lu\n",bwtboundthisline );
 										if ( child.idx == gt_bwtseqgetsymbol(bwtboundthisline, index) && child.prefixofsuffixbits == 0 )	
 										{					
 											unsigned long subjectposthisline =
@@ -332,9 +282,7 @@ int gt_pck_bitparallelism(const GtUchar *query,
 												if (current.prefixofsuffixbits & mask) {
 													unsigned long querypos = querylen - (GT_INTWORDSIZE-i);
 													if ( isleftmaximal(encseq,subjectposthisline,query,query+querypos) ) {                                   
-														printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",current.lower,current.upper,current.depth);
-														//printf("------i=%u\n",(unsigned int)querylen - gt_bitsequence_getpositions(current.prefixofsuffixbits));
-														//zerosontheright(current.prefixofsuffixbits);
+														////printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",current.lower,current.upper,current.depth);
 														/*
 														 * print the result
 														 */
@@ -349,24 +297,21 @@ int gt_pck_bitparallelism(const GtUchar *query,
 												}
 											}
 									  }											
-									}
-									//current.isvisited = true;													
+									}											
 								}
 							} 
 							else
 							{
 								/* for option mumreference or mum */
-								if ( (current.depth >= leastlength) && current.isvisited==false && (current.lower + 1 == current.upper) ) {
+								if ( (current.depth >= leastlength) && (current.lower + 1 == current.upper) ) {
 
-									// because of unmatch of last character, match length = child.depth-1
-									printf("%s\n","----------------------------");
 									//printf("next(%s,%lu,depth=%lu)->%s\n",buffer1,idx,child.depth,buffer2);
 									unsigned long subjectpos =\
 									gt_voidpackedfindfirstmatchconvert(index,
 																										 current.lower,
 																										 current.depth);
 																										 
-									// comparing the unique subject position with possible more than 1 query start position										
+									/* comparing the unique subject position with possible more than 1 query start position	*/									
 									unsigned int i;
 									GtBitsequence mask;
 									for (i=0, mask = GT_FIRSTBIT;
@@ -376,11 +321,9 @@ int gt_pck_bitparallelism(const GtUchar *query,
 										if (current.prefixofsuffixbits & mask) {
 											unsigned long querypos = querylen - (GT_INTWORDSIZE-i);
 											if ( isleftmaximal(encseq,subjectpos,query,query+querypos) ) {                                   
-												printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",current.lower,current.upper,current.depth);
-												//printf("------i=%u\n",(unsigned int)querylen - gt_bitsequence_getpositions(current.prefixofsuffixbits));
-												//zerosontheright(current.prefixofsuffixbits);
+												////printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",current.lower,current.upper,current.depth);
 												/*
-												 * print the result
+												 * print or save the result
 												 */
 												processmatch(encseq,
 																		 query,
@@ -391,8 +334,7 @@ int gt_pck_bitparallelism(const GtUchar *query,
 																		 showspecinfo);
 											}
 										}
-									}
-									current.isvisited = true;													
+									}												
 								}
 						  }
 						} else {

@@ -317,16 +317,16 @@ static void matchposinsinglesequence(uint64_t unitnum,
                                       const GtUchar *query,
                                       unsigned long querylen,
                                       const char *querydesc,
-                                      Findmatchfunction findmatchfunction,
+                                      GT_UNUSED Findmatchfunction findmatchfunction,
                                       Processmatchfunction processmatch,
                                       Matchprocessinfo *matchprocessinfo,
-                                      bool showtime,
-                                      GtProgressTimer *timer,
-                                      GtLogger *logger,
+                                      GT_UNUSED bool showtime,
+                                      GT_UNUSED GtProgressTimer *timer,
+                                      GT_UNUSED GtLogger *logger,
                                       GtError *err)
 {
-  const GtUchar *qptr;
-  unsigned long remaining;
+  //const GtUchar *qptr;
+  //unsigned long remaining;
 
   /* for every query, show its description at the beginning */
   showquerydesc(unitnum,
@@ -336,18 +336,18 @@ static void matchposinsinglesequence(uint64_t unitnum,
                 err);
 
   /* take every suffix of query, qptr is a alias name of qstart */
-  for (qptr = query, remaining = querylen; remaining > 0; qptr++, remaining--)
-  {
-    if ( !findmatchfunction(
-                   query,           /* absolute query start position */
-                   qptr,            /* variable position in query */
-                   query+querylen,  /* absolute query end position */
-                   processmatch,
-                   matchprocessinfo) )    /* attention: no GtError further given */
-    {
-      continue;
-    };
-  }    
+  //for (qptr = query, remaining = querylen; remaining > 0; qptr++, remaining--)
+  //{
+    //if ( !findmatchfunction(
+                   //query,           /* absolute query start position */
+                   //qptr,            /* variable position in query */
+                   //query+querylen,  /* absolute query end position */
+                   //processmatch,
+                   //matchprocessinfo) )    /* attention: no GtError further given */
+    //{
+      //continue;
+    //};
+  //}    
   gt_pck_bitparallelism(query,
                         querylen,
                         (const FMindex *)matchprocessinfo->packedindex,
