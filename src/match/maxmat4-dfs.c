@@ -47,6 +47,42 @@ static bool isleftmaximal(const GtEncseq *encseq,
   }
   return leftmaximal;
 }
+        
+/**
+ * the function calculate the long common prefix
+ * between reference sequence and query sequence
+ * from the qnewstart position.
+ * qnewstart position refer to the first position >= leastlength
+ * after general map-process with bwt
+ */
+static unsigned long lcp(const GtEncseq *encseq,
+                         unsigned long dbrightbound,
+                         unsigned long totallength,
+                         const GtUchar *qnewstart,
+                         const GtUchar *qend)
+{
+  const GtUchar *qptr = qnewstart;
+  gt_assert(dbrightbound < totallength);
+  GtUchar dbrightboundchar = gt_encseq_get_encoded_char(encseq,
+                                           dbrightbound,
+                                           GT_READMODE_FORWARD);
+
+  while (qptr < qend &&
+        (dbrightbound < totallength) && !ISSPECIAL(dbrightboundchar) &&
+        *qptr == dbrightboundchar )
+  {
+    qptr++;
+    dbrightbound++;
+    /* gt_assert(dbrightbound < totallength); */
+    if (dbrightbound < totallength) 
+    {
+			dbrightboundchar = gt_encseq_get_encoded_char(encseq,
+																		 dbrightbound,
+																		 GT_READMODE_FORWARD);
+		}
+  }
+  return (unsigned long) (qptr-qnewstart);
+}
                             
 int gt_pck_bitparallelism(const GtUchar *query,
                           unsigned long querylen,
@@ -55,12 +91,12 @@ int gt_pck_bitparallelism(const GtUchar *query,
                           unsigned long totallength,
                           GT_UNUSED unsigned long leastlength,
                           //Findmatchfunction findmatchfunction,
-                          const GtMatchmode matchmode,
+                          GT_UNUSED const GtMatchmode matchmode,
                           GT_UNUSED Processmatchfunction processmatch,
                           GT_UNUSED Showspecinfo *showspecinfo,
                           bool showtime,
                           GtProgressTimer *timer,
-                          GtLogger *logger,
+                          GT_UNUSED GtLogger *logger,
                           GT_UNUSED GtError *err)
 {
   int had_err = 0;
@@ -69,10 +105,13 @@ int gt_pck_bitparallelism(const GtUchar *query,
   Mbtab *tmpmbtab;
   unsigned long *rangeOccs;
   unsigned long resize = 64UL; 
-  unsigned long maxdepth, rangesize, idx, num_of_rows;
+  unsigned long /*maxdepth,*/ rangesize, idx, num_of_rows;
   unsigned long *eqsvector;
   
-  char buffer1[GT_INTWORDSIZE+1], buffer2[GT_INTWORDSIZE+1];	
+  unsigned long offset = 0UL;
+  unsigned long bitlen = (unsigned long) (CHAR_BIT * sizeof (unsigned long));
+  
+  //char buffer1[GT_INTWORDSIZE+1], buffer2[GT_INTWORDSIZE+1];	
   
   GtUchar alphasize;
   unsigned int numofchars;
@@ -82,276 +121,193 @@ int gt_pck_bitparallelism(const GtUchar *query,
   rangeOccs = gt_calloc((size_t) GT_MULT2(alphasize), sizeof (*rangeOccs));
   tmpmbtab = gt_calloc((size_t) (alphasize + 3), sizeof (*tmpmbtab ));
   eqsvector = gt_calloc(alphasize, sizeof (*eqsvector));
-  gt_initeqsvectorrev(eqsvector,(unsigned long) alphasize,
-                query,querylen);  /* why is rev-version used here? */
   
-  GT_STACK_INIT(&stack, resize);
-  
-  root.depth = 0;
-  root.lower = 0;
-  root.upper = totallength + 1;
-  root.prefixofsuffixbits = ~0UL;
-  GT_STACK_PUSH(&stack,root);
-
-  if (showtime)
+  while (offset < querylen) 
   {
-    gt_progress_timer_start_new_state(timer,
-                                      "start to traverse tree",
-                                      stdout);
-  }
+		printf("------offset=%lu\n",offset);
+		/* the position of most left query in boundary matches */
+		unsigned long mostleftquerypos = offset + bitlen - (leastlength-1);
+		/* in last round or querylen < 32 or 64 bits */
+		bool inlastround = (querylen-offset <= bitlen);
+		// 短于 32 bits 的第一轮 和 长于32 bits 的最后一轮
+		if (inlastround)
+		{
+			gt_initeqsvectorrev(eqsvector,(unsigned long) alphasize,
+										query+offset,querylen-offset);  /* why is rev-version used here? */
+		} 
+		else
+		{
+			gt_initeqsvectorrev(eqsvector,(unsigned long) alphasize,
+										query+offset,bitlen);  			
+		}			
+		
+		GT_STACK_INIT(&stack, resize);
+		
+		root.depth = 0;
+		root.lower = 0;
+		root.upper = totallength + 1;
+		root.prefixofsuffixbits = ~0UL;
+		GT_STACK_PUSH(&stack,root);
 
-  maxdepth = 0;
-  while (!GT_STACK_ISEMPTY(&stack))
-  {
-    current = GT_STACK_POP(&stack);
-    //printf("---pop---current.lower=%lu, current.upper=%lu, current.depth=%lu\n",current.lower,current.upper,current.depth);
-    if (maxdepth < current.depth)
-      maxdepth = current.depth;
-
-    gt_assert(current.lower < current.upper);
-    num_of_rows = current.upper - current.lower;
-
-    // 唯一的区别是 current.lower and current.upper 值不同
-    rangesize = gt_bwtrangesplitallwithoutspecial(tmpmbtab,
-                                                  rangeOccs,
-                                                  index,
-                                                  current.lower,
-                                                  current.upper);
-    gt_assert(rangesize <= alphasize);
-    
-
-
-    //printf("range size=%lu,current.lower=%lu,current.upper=%lu, alphazise=%u\n",rangesize,current.lower, current.upper,alphasize);
-   // printf("------cc=%u\n",cc);
-    
-		/* node current is now at the end of reference */
-		bool currentatend = ( (current.prefixofsuffixbits != 0) && (totallength==(gt_voidpackedfindfirstmatchconvert(index,current.lower,current.depth)+current.depth)) );
-		if (currentatend) {
-			////printf("-------------###currentatend###lowerbound=%lu,upperbound=%lu,leaf.depth=%lu------------------\n",current.lower,current.upper,current.depth);
-							/* process for pop is following */
-							if (matchmode == GT_MATCHMODE_MAXMATCH) 
-							{
-								/* for option maxmatch */								
-								if ( current.depth>=leastlength ) {
-									                                  
-                  /* 三次turn, 每次6个, 中间那一次全军覆没，因为那一次的 child.prefixofsuffixbits ！＝0， 有子 */
-									unsigned long bwtboundthisline;
-									for (bwtboundthisline=current.lower;bwtboundthisline < current.upper; bwtboundthisline++)
-									{	
-										////printf("bwtboundthisline=%lu\n",bwtboundthisline );
-										if ( SEPARATOR == gt_bwtseqgetsymbol(bwtboundthisline, index) )	
-										{					
-											unsigned long subjectposthisline =
-											gt_voidpackedfindfirstmatchconvert(index,
-																												 bwtboundthisline,
-																												 current.depth);
-																											 
-											/* comparing the unique subject position with possible more than 1 query start position */										
-											unsigned int i;
-											GtBitsequence mask;
-											for (i=0, mask = GT_FIRSTBIT;
-													 i < (unsigned int) GT_INTWORDSIZE;
-													 i++, mask >>= 1)
-											{
-												if (current.prefixofsuffixbits & mask) {
-													unsigned long querypos = querylen - (GT_INTWORDSIZE-i);
-													if ( isleftmaximal(encseq,subjectposthisline,query,query+querypos) ) {                                   
-														////printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",current.lower,current.upper,current.depth);
-
-														/*
-														 * print the result
-														 */
-														processmatch(encseq,
-																				 query,
-																				 querypos,  /* querypos */
-																				 querylen,
-																				 current.depth,
-																				 subjectposthisline,
-																				 showspecinfo);
-													}
-												}
-											}
-									  }											
-									}												
-								}
-							} 
-							else
-							{
-								/* for option mumreference or mum */
-							  if ( (current.depth >= leastlength) && (current.lower + 1 == current.upper) && (SEPARATOR==gt_bwtseqgetsymbol(current.lower,index))	) {
-
-									unsigned long subjectpos =\
-									gt_voidpackedfindfirstmatchconvert(index,
-																										 current.lower,
-																										 current.depth);
-																										 
-									/* comparing the unique subject position with possible more than 1 query start position	*/									
-									unsigned int i;
-									GtBitsequence mask;
-									for (i=0, mask = GT_FIRSTBIT;
-											 i < (unsigned int) GT_INTWORDSIZE;
-											 i++, mask >>= 1)
-									{
-										if (current.prefixofsuffixbits & mask) {
-											unsigned long querypos = querylen - (GT_INTWORDSIZE-i);
-											if ( isleftmaximal(encseq,subjectpos,query,query+querypos) ) {                                   
-												////printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",current.lower,current.upper,current.depth);
-												/*
-												 * print or save the result
-												 */
-												processmatch(encseq,
-																		 query,
-																		 querypos,  /* querypos */
-																		 querylen,
-																		 current.depth,
-																		 subjectpos,
-																		 showspecinfo);
-											}
-										}
-									}												
-								}
-						  }
+		if (showtime)
+		{
+			gt_progress_timer_start_new_state(timer,
+																				"start to traverse tree",
+																				stdout);
 		}
-    for (idx = 0; idx < rangesize; idx++)
-    {    
-      gt_assert (tmpmbtab[idx].lowerbound <= tmpmbtab[idx].upperbound);
-      gt_assert ((tmpmbtab[idx].upperbound - tmpmbtab[idx].lowerbound) <=
-                num_of_rows);
-      num_of_rows -= (tmpmbtab[idx].upperbound - tmpmbtab[idx].lowerbound);
-      
-      //printf("------tmpmbtab[%lu].lowerbound=%lu, tmpmbtab[idx].upperbound=%lu\n",idx,tmpmbtab[idx].lowerbound,tmpmbtab[idx].upperbound);
+
+		//maxdepth = 0;
+		while (!GT_STACK_ISEMPTY(&stack))
+		{
+			current = GT_STACK_POP(&stack);
+			//printf("---pop---current.lower=%lu, current.upper=%lu, current.depth=%lu\n",current.lower,current.upper,current.depth);
+			//////if (maxdepth < current.depth)
+			//////	maxdepth = current.depth;
+
+			gt_assert(current.lower < current.upper);
+			num_of_rows = current.upper - current.lower;
+
+			// 唯一的区别是 current.lower and current.upper 值不同
+			rangesize = gt_bwtrangesplitallwithoutspecial(tmpmbtab,
+																										rangeOccs,
+																										index,
+																										current.lower,
+																										current.upper);
+			gt_assert(rangesize <= alphasize);
+			
 
 
-      if ( (tmpmbtab[idx].lowerbound != tmpmbtab[idx].upperbound) )  /* in reference with idx is extensible */
-      {      
-				    // 肯定有孩子，关于孩子是不是正确的， 就要看 bitpara 了。比如 atgct是他的孩子 
-				    /* tmpmbtab[idx] is a branch of parent node */           
-            child.lower = tmpmbtab[idx].lowerbound;
-            child.upper = tmpmbtab[idx].upperbound;
-            child.depth = current.depth + 1;  
-            child.idx = idx;
-						if (child.depth > 1UL)
-						{
-							child.prefixofsuffixbits
-								= current.prefixofsuffixbits &
-									(eqsvector[(GtUchar)idx] << (child.depth-1));
-						} else
-						{
-							child.prefixofsuffixbits = eqsvector[(GtUchar)idx];
-						}
-										
-						gt_bitsequence_tostring(buffer1,(GtBitsequence) current.prefixofsuffixbits);
-						gt_bitsequence_tostring(buffer2,(GtBitsequence) child.prefixofsuffixbits);
-						//printf("next(%s,%lu,depth=%lu)->%s\n",buffer1,idx,child.depth,buffer2);
-					 
-						/* if no corresponding match finds in query or it reaches the end of reference, print the results out */
-						if ( (child.prefixofsuffixbits != 0) && (totallength==(gt_voidpackedfindfirstmatchconvert(index,child.lower,child.depth)+child.depth)) ) {
-							
-							GT_STACK_PUSH(&stack,child);		
-							//printf("---push1---child.lower=%lu, child.upper=%lu, child.depth=%lu\n",child.lower,child.upper,child.depth);	
-								
-            } else if (child.prefixofsuffixbits == 0) {  /* in query with idx is not extensible */
-							/* process for pop is following */
-							
-							////printf("-------------###normal###lowerbound=%lu,upperbound=%lu,leaf.depth=%lu--------------\n",current.lower,current.upper,current.depth);
-							if (matchmode == GT_MATCHMODE_MAXMATCH) 
-							{
-								/* for option maxmatch */								
-								if ( current.depth>=leastlength ) {
-									////printf("next(%s,%lu,depth=%lu)->%s\n",buffer1,idx,child.depth,buffer2);
-									                              
-                  /* 三次turn, 每次6个, 中间那一次全军覆没，因为那一次的 child.prefixofsuffixbits ！＝0， 有子 */
-									unsigned long bwtboundthisline;
-									for (bwtboundthisline=current.lower;bwtboundthisline < current.upper; bwtboundthisline++)
-									{	
-										////printf("bwtboundthisline=%lu\n",bwtboundthisline );
-										if ( child.idx == gt_bwtseqgetsymbol(bwtboundthisline, index) && child.prefixofsuffixbits == 0 )	
-										{					
-											unsigned long subjectposthisline =
-											gt_voidpackedfindfirstmatchconvert(index,
-																												 bwtboundthisline,
-																												 current.depth);
-																											 
-											/* comparing the unique subject position with possible more than 1 query start position */								
-											unsigned int i;
-											GtBitsequence mask;
-											for (i=0, mask = GT_FIRSTBIT;
-													 i < (unsigned int) GT_INTWORDSIZE;
-													 i++, mask >>= 1)
-											{
-												if (current.prefixofsuffixbits & mask) {
-													unsigned long querypos = querylen - (GT_INTWORDSIZE-i);
-													if ( isleftmaximal(encseq,subjectposthisline,query,query+querypos) ) {                                   
-														////printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",current.lower,current.upper,current.depth);
-														/*
-														 * print the result
-														 */
-														processmatch(encseq,
-																				 query,
-																				 querypos,  /* querypos */
-																				 querylen,
-																				 current.depth,
-																				 subjectposthisline,
-																				 showspecinfo);
-													}
-												}
+			//printf("range size=%lu,current.lower=%lu,current.upper=%lu, alphazise=%u\n",rangesize,current.lower, current.upper,alphasize);
+		 // printf("------cc=%u\n",cc);
+			
+			
+			
+			for (idx = 0; idx < rangesize; idx++)
+			//for (idx = rangesize-1; idx >= 0; idx--)
+			{    
+				gt_assert (tmpmbtab[idx].lowerbound <= tmpmbtab[idx].upperbound);
+				gt_assert ((tmpmbtab[idx].upperbound - tmpmbtab[idx].lowerbound) <=
+									num_of_rows);
+				num_of_rows -= (tmpmbtab[idx].upperbound - tmpmbtab[idx].lowerbound);
+				
+				//printf("------tmpmbtab[%lu].lowerbound=%lu, tmpmbtab[idx].upperbound=%lu\n",idx,tmpmbtab[idx].lowerbound,tmpmbtab[idx].upperbound);
+
+
+        /* only the nodes that has child is allowed to enter */
+				if ( (tmpmbtab[idx].lowerbound != tmpmbtab[idx].upperbound) )  /* in reference with idx is extensible */
+				{  
+
+												/* we found a leave on parent */
+												if ( (current.lower + 1 == current.upper) && (current.depth >= leastlength) ) {
+									  //printf("-------------###normal###lowerbound=%lu,upperbound=%lu,leaf.depth=%lu--------------\n",current.lower,current.upper,current.depth);
+													//printf("next(%s,%lu,depth=%lu)->%s\n",buffer1,idx,child.depth,buffer2);
+													unsigned long subjectpos =\
+													gt_voidpackedfindfirstmatchconvert(index,
+																														 current.lower,
+																														 current.depth);
+																														 
+													/* comparing the unique subject position with possible more than 1 query start position	*/									
+													unsigned int i;
+													GtBitsequence mask;
+													for (i=0, mask = GT_FIRSTBIT;
+															 i < (unsigned int) GT_INTWORDSIZE;
+															 i++, mask >>= 1)
+													{
+														if (current.prefixofsuffixbits & mask) {
+															unsigned long querypos;
+															if (inlastround)
+															{
+																querypos = querylen - (GT_INTWORDSIZE-i); /* (GT_INTWORDSIZE-i) is length from match start to end of the snippt */ 
+															} 
+															else
+															{
+																querypos = offset + i;
+															}
+															//unsigned long querypos = querylen - (GT_INTWORDSIZE-i);
+															if ( isleftmaximal(encseq,subjectpos,query,query+querypos) ) {                                   
+																////printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",current.lower,current.upper,current.depth);
+																if (querypos+current.depth == offset+bitlen)
+																{
+																	if (querypos < mostleftquerypos) 
+																	{
+																		//printf("------querypos=%lu, mostleftquerypos=%lu\n",querypos, mostleftquerypos);
+																		mostleftquerypos = querypos; 	
+																	}	
+																} 
+																else
+																{
+                                    unsigned long additionalmatchlength = 
+																									lcp(encseq,
+																											subjectpos + current.depth,
+																											totallength,
+																											query+querypos+current.depth,
+																											query+querylen);  /* qend */								
+                                    unsigned long matchlength = current.depth + additionalmatchlength;
+																		/*
+																		 * print or save the result
+																		 */
+																		processmatch(encseq,
+																								 query,
+																								 querypos,  /* querypos */
+																								 querylen,
+																								 matchlength,
+																								 subjectpos,
+																								 showspecinfo);
+																}
+															}
+														}
+													}												
 											}
-									  }											
-									}											
-								}
-							} 
-							else
+					else
+					{					
+							/* tmpmbtab[idx] is a branch of current node, 
+							 * that is, tmpmbtab[idx] can be the only child of current node
+							 * or one of children of current onde */           
+							if (current.depth > 0UL)
 							{
-								/* for option mumreference or mum */
-								if ( (current.depth >= leastlength) && (current.lower + 1 == current.upper) ) {
+								child.prefixofsuffixbits
+									= current.prefixofsuffixbits &
+										(eqsvector[(GtUchar)idx] << current.depth);
+							} else
+							{
+								child.prefixofsuffixbits = eqsvector[(GtUchar)idx];
+							}
+							
+							if (child.prefixofsuffixbits != 0) {		
+								child.lower = tmpmbtab[idx].lowerbound;  /* record match position in reference */
+							  child.upper = tmpmbtab[idx].upperbound;		
+							  child.depth = current.depth + 1;  			 /* record match length */
+								GT_STACK_PUSH(&stack,child);						 /*	record match position in query */		
+							}
+					}
 
-									//printf("next(%s,%lu,depth=%lu)->%s\n",buffer1,idx,child.depth,buffer2);
-									unsigned long subjectpos =\
-									gt_voidpackedfindfirstmatchconvert(index,
-																										 current.lower,
-																										 current.depth);
-																										 
-									/* comparing the unique subject position with possible more than 1 query start position	*/									
-									unsigned int i;
-									GtBitsequence mask;
-									for (i=0, mask = GT_FIRSTBIT;
-											 i < (unsigned int) GT_INTWORDSIZE;
-											 i++, mask >>= 1)
-									{
-										if (current.prefixofsuffixbits & mask) {
-											unsigned long querypos = querylen - (GT_INTWORDSIZE-i);
-											if ( isleftmaximal(encseq,subjectpos,query,query+querypos) ) {                                   
-												////printf("---leaf---lowerbound=%lu,upperbound=%lu,leaf.depth=%lu\n",current.lower,current.upper,current.depth);
-												/*
-												 * print or save the result
-												 */
-												processmatch(encseq,
-																		 query,
-																		 querypos,  /* querypos */
-																		 querylen,
-																		 current.depth,
-																		 subjectpos,
-																		 showspecinfo);
-											}
-										}
-									}												
-								}
-						  }
-						} else {
-							GT_STACK_PUSH(&stack,child);
-              //printf("---push---child.lower=%lu, child.upper=%lu, child.depth=%lu\n",child.lower,child.upper,child.depth);
-						}
-						
-      }
-    }
+											
 
+						 
 
-  }
-  //printf("---maxdepth---maxdepth=%lu\n",maxdepth);
-  //    gt_alphabet_decode_seq_to_fp(gt_encseq_alphabet(encseq),stdout,
-  //                               query,4);
-  //  (void) putchar('\n');
-  gt_logger_log(logger, "max stack depth = %lu", maxdepth);
+							
+				}
+				else
+				{
+
+				  //printf("-------------###normal###lowerbound=%lu,upperbound=%lu,leaf.depth=%lu--------------",current.lower,current.upper,current.depth);
+				  //printf("------tmpmbtab[%lu].lowerbound=%lu, tmpmbtab[idx].upperbound=%lu\n",idx,tmpmbtab[idx].lowerbound,tmpmbtab[idx].upperbound);
+				}
+			}
+			
+		}
+		
+		if (inlastround)
+		{
+			offset = querylen;
+		} 
+		else
+		{
+			offset = mostleftquerypos;						
+		}	
+	}
+
+  // gt_logger_log(logger, "max stack depth = %lu", maxdepth);
   GT_STACK_DELETE(&stack);
   gt_free(rangeOccs);
   gt_free(tmpmbtab);
