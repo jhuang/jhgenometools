@@ -19,12 +19,14 @@
 
 #include "core/stack-inlined.h"
 #include "match/eis-voiditf.h"
+#include "core/bittab_api.h"
 
 typedef struct {
   unsigned long depth,
-                prefixofsuffixbits,
+                //prefixofsuffixbits,
                 lower,
                 upper;  
+  GtBittab *prefixofsuffixbits;
 } Maxmat4Node;
 
 GT_STACK_DECLARESTRUCT(Maxmat4Node, 256UL);
