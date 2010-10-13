@@ -94,6 +94,7 @@ int gt_pck_bitparallelism(const GtUchar *query,
                           GT_UNUSED const GtMatchmode matchmode,
                           GT_UNUSED Processmatchfunction processmatch,
                           GT_UNUSED Showspecinfo *showspecinfo,
+                          bool showbitparallelismfactor,
                           bool showtime,
                           GtProgressTimer *timer,
                           GT_UNUSED GtLogger *logger,
@@ -127,9 +128,12 @@ int gt_pck_bitparallelism(const GtUchar *query,
 
 	unsigned long *eqsvector;
 	eqsvector = gt_calloc(alphasize, sizeof (*eqsvector));
+	
+	double offsettimes = 0.0;
      
   while (offset < querylen) 
   {
+		offsettimes++;
 		//printf("------offset=%lu\n",offset);
 		/* initialize the position of most left query of boundary matches */
 		unsigned long mostleftquerypos = offset + bitlen - leastlength + 1;
@@ -304,6 +308,11 @@ int gt_pck_bitparallelism(const GtUchar *query,
 		{
 			offset = mostleftquerypos;						
 		}
+	}
+	
+	if (showbitparallelismfactor && querylen!=0)
+	{
+		printf("# BIT PARALLELISM FACTOR=%3.2lf\n",(offsettimes+1)/querylen);
 	}
 
   // gt_logger_log(logger, "max stack depth = %lu", maxdepth);
