@@ -26,9 +26,9 @@ typedef struct {
                   lower,
                   upper;  
   GtBittab *prefixofsuffixbits;
-} Maxmat4Node;
+} Maxmat4NodeBittab;
 
-GT_STACK_DECLARESTRUCT(Maxmat4Node, 256UL);
+GT_STACK_DECLARESTRUCT(Maxmat4NodeBittab, 256UL);
 
 int gt_pck_bitparallelism_bittab(const GtUchar *query,
 																	unsigned long querylen,
@@ -40,6 +40,8 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 																	GT_UNUSED const GtMatchmode matchmode,
 																	GT_UNUSED Processmatchfunction processmatch,
 																	GT_UNUSED Showspecinfo *showspecinfo,
+																	unsigned long bitlength,
+																	bool showbitparallelismfactor,
 																	bool showtime,
 																	GtProgressTimer *timer,
 																	GT_UNUSED GtLogger *logger,

@@ -36,9 +36,11 @@ typedef struct {
        showsequencelengths,                  /* showsequencelengths */
        prebwt,
        bitparallelism,
+       bitparallelismwithbittab,      
        showbitparallelismfactor,
        showtime;
-  Definedunsignedlong leastlength;           /* leastlength */
+  Definedunsignedlong leastlength,           /* leastlength */
+                      bitlength;             /* num_of_bits */
 } GtMaxmat4Arguments;
 
 static void* gt_maxmat4_arguments_new(void)
@@ -63,7 +65,7 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
   GtMaxmat4Arguments *arguments = (GtMaxmat4Arguments*)tool_arguments;
   GtOption *option_mum, *option_mumreference, *option_maxmatch, *option_l,
            *option_b, *option_r, *option_s, *option_c, *option_F, *option_L, 
-           *option_p, *option_bit, *option_f, *option_showtime;
+           *option_p, *option_bit, *option_bittab, *option_bitlen, *option_f, *option_showtime;
   GtOptionParser *op;
 
   gt_assert(arguments);
@@ -159,6 +161,20 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
       &arguments->bitparallelism, false);
   gt_option_parser_add_option(op, option_bit);
  
+  /* -bittab for bitparallelism with bittab */
+  option_bittab = gt_option_new_bool("bittab",
+      "use bit parallelism with bittab",
+      &arguments->bitparallelismwithbittab, false);
+  gt_option_parser_add_option(op, option_bittab);
+  
+  /* -bitlen for bittab length */
+  option_bitlen = gt_option_new_ulong_min("bitlen",
+      "set custom length of bittab for option bittab "
+      "if not set, the default value is 32",
+      &arguments->bitlength.valueunsignedlong,
+      (unsigned long)32,(unsigned long) 1);
+  gt_option_parser_add_option(op, option_bitlen);
+  
   /* -f for showbitparallelismfactor */
   option_f = gt_option_new_bool("f",
       "show bit parallelism factor for every query, that is， 1/average offset",
@@ -174,6 +190,7 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
   /* option implications */
   gt_option_imply_either_2(option_c, option_b, option_r);
   gt_option_imply(option_f, option_bit);
+  gt_option_imply(option_bitlen, option_bittab);
 
   /* option exclusions */
   gt_option_exclude(option_mum, option_mumreference);
@@ -181,6 +198,8 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
   gt_option_exclude(option_mumreference, option_maxmatch);
   gt_option_exclude(option_b, option_r);
   gt_option_exclude(option_p, option_bit);
+  gt_option_exclude(option_p, option_bittab);
+  gt_option_exclude(option_bit, option_bittab);
 
   /* set minimal arugments */
   gt_option_parser_set_min_args(op, (unsigned int)2);
@@ -328,6 +347,8 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
                    arguments->showsequencelengths,
                    arguments->prebwt,
                    arguments->bitparallelism,
+                   arguments->bitparallelismwithbittab,
+                   arguments->bitlength,   
                    arguments->showbitparallelismfactor,
                    arguments->showtime,
                    maxmat4progress,

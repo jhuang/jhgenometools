@@ -26,8 +26,6 @@
 #include "match/maxmat4-dfs-bittab.h"
 #include "maxmat4-initeqsvec.h"
 
-#define BIT_LENGTH      32
-
 /** the function check if the mapped sequence is left maximal */
 static bool isleftmaximal(const GtEncseq *encseq,
                          unsigned long subjectpos,
@@ -96,21 +94,22 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 																	GT_UNUSED const GtMatchmode matchmode,
 																	GT_UNUSED Processmatchfunction processmatch,
 																	GT_UNUSED Showspecinfo *showspecinfo,
+																	unsigned long bitlength,
+																	bool showbitparallelismfactor,
 																	bool showtime,
 																	GtProgressTimer *timer,
 																	GT_UNUSED GtLogger *logger,
 																	GT_UNUSED GtError *err)
 {
   int had_err = 0;
-  GtStackMaxmat4Node stack;
-  Maxmat4Node root, current, child;
+  GtStackMaxmat4NodeBittab stack;
+  Maxmat4NodeBittab root, current, child;
   Mbtab *tmpmbtab;
   unsigned long *rangeOccs;
   unsigned long resize = 64UL; 
   unsigned long /*maxdepth,*/ rangesize, idx;
   
   unsigned long offset = 0UL;
-  unsigned long bitlen = BIT_LENGTH;
     
   GtUchar alphasize;
   unsigned int numofchars;
@@ -124,24 +123,27 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 	GtBittab **eqsvector;
 	eqsvector = gt_malloc(sizeof (GtBittab*) * alphasize);
 	for (i = 0; i < alphasize; i++) {
-		eqsvector[(GtUchar)i] = gt_bittab_new(bitlen);
+		eqsvector[(GtUchar)i] = gt_bittab_new(bitlength);
 	}
+	
+	double offsettimes = 0.0;
      
   while (offset < querylen) 
   {
+		offsettimes++;
 		//printf("------offset=%lu\n",offset);
 		/* initialize the position of most left query of boundary matches */
-		unsigned long mostleftquerypos = offset + bitlen - leastlength + 1;
-		/* in last round or querylen < bitlen */
-		bool islastround = (querylen-offset <= bitlen);
+		unsigned long mostleftquerypos = offset + bitlength - leastlength + 1;
+		/* in last round or querylen < bitlength */
+		bool islastround = (querylen-offset <= bitlength);
 		
 		if (islastround)
 		{  
-			gt_maxmat4_initeqsvectorrev(eqsvector,alphasize,bitlen,query+offset,querylen-offset);
+			gt_maxmat4_initeqsvectorrev(eqsvector,alphasize,bitlength,query+offset,querylen-offset);
 		} 
 		else
 		{
-			gt_maxmat4_initeqsvectorrev(eqsvector,alphasize,bitlen,query+offset,bitlen);  			
+			gt_maxmat4_initeqsvectorrev(eqsvector,alphasize,bitlength,query+offset,bitlength);  			
 		}			
 		
 		GT_STACK_INIT(&stack, resize);
@@ -149,9 +151,9 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 		root.depth = 0;
 		root.lower = 0;
 		root.upper = totallength + 1;
-		GtBittab *rootprefixofsuffixbits = gt_bittab_new(bitlen);
+		GtBittab *rootprefixofsuffixbits = gt_bittab_new(bitlength);
 		long position;
-		for (position = 0; position < bitlen; position++) {
+		for (position = 0; position < bitlength; position++) {
 			gt_bittab_set_bit(rootprefixofsuffixbits, position);
 		}  /* init all positions as 1 */
 		root.prefixofsuffixbits = rootprefixofsuffixbits;
@@ -188,7 +190,7 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 							subjectpositions[i] = subjectposthisline;
 					}					
 
-					for (i=0; i<bitlen; i++)
+					for (i=0; i<bitlength; i++)
 					{
 						/* for every query position */	
 						if (gt_bittab_bit_is_set(current.prefixofsuffixbits, i)) 
@@ -196,7 +198,7 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 							unsigned long querypos;	
 							if (islastround)
 							{
-								querypos = querylen - (bitlen-i);
+								querypos = querylen - (bitlength-i);
 							} 
 							else
 							{
@@ -213,7 +215,7 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 																		subjectpositions[j] + current.depth,
 																		totallength,
 																		query+querypos+current.depth,
-																		//query+offset+bitlen);  /* qrightbound */
+																		//query+offset+bitlength);  /* qrightbound */
 																		query+querylen);         /* qend */								
 									unsigned long matchlength = current.depth + additionalmatchlength;	
 
@@ -253,12 +255,12 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 							/* tmpmbtab[idx] is a branch of current node, 
 							 * that is, tmpmbtab[idx] can be the only child of current node
 							 * or one of children of current onde */  
-							GtBittab *prefixofsuffixbits = gt_bittab_new(bitlen);
+							GtBittab *prefixofsuffixbits = gt_bittab_new(bitlength);
 							//////gt_bittab_show(current.prefixofsuffixbits, stdout);
 
 							if (current.depth > 0UL)
 							{
-								GtBittab *tmp = gt_bittab_new(bitlen);
+								GtBittab *tmp = gt_bittab_new(bitlength);
 								gt_bittab_equal(tmp, eqsvector[(GtUchar)idx]);   
 								//////gt_bittab_show(tmp, stdout);        
 		
@@ -306,6 +308,11 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 		}
 	}
 
+	if (showbitparallelismfactor && querylen!=0)
+	{
+		printf("# BIT PARALLELISM FACTOR=%3.2lf\n",(offsettimes+1)/querylen);
+	}
+	
   // gt_logger_log(logger, "max stack depth = %lu", maxdepth);
   GT_STACK_DELETE(&stack);
   gt_free(rangeOccs);

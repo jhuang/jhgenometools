@@ -20,6 +20,7 @@
 #include "match/eis-voiditf.h"
 #include "extended/reverse.h"
 #include "maxmat4-dfs.h"
+#include "maxmat4-dfs-bittab.h"
 
 /*
   This file contains functions to appropriately call the function
@@ -321,6 +322,8 @@ static void matchposinsinglesequence(uint64_t unitnum,
                                       Processmatchfunction processmatch,
                                       Matchprocessinfo *matchprocessinfo,
                                       bool bitparallelism,
+                                      bool bitparallelismwithbittab,
+                                      Definedunsignedlong bitlength,
                                       bool showbitparallelismfactor,
                                       GT_UNUSED bool showtime,
                                       GT_UNUSED GtProgressTimer *timer,
@@ -351,6 +354,25 @@ static void matchposinsinglesequence(uint64_t unitnum,
 													timer,
 													logger,
 													err);		
+	}
+	else if (bitparallelismwithbittab)
+	{
+		gt_pck_bitparallelism_bittab(query,
+																querylen,
+																(const FMindex *)matchprocessinfo->packedindex,
+																matchprocessinfo->encseq,
+																matchprocessinfo->totallength,
+																(matchprocessinfo->leastlength).valueunsignedlong,
+																//findmatchfunction,
+																matchprocessinfo->matchmode,
+																processmatch,
+																matchprocessinfo->showspecinfo,
+																bitlength.valueunsignedlong,
+																showbitparallelismfactor,
+																showtime,
+																timer,
+																logger,
+																err);			
 	}
 	else
 	{    
@@ -399,6 +421,8 @@ int gt_findmum(const GtEncseq *encseq,
                 bool showsequencelengths,
                 bool prebwt,
                 bool bitparallelism,
+                bool bitparallelismwithbittab,
+                Definedunsignedlong bitlength,   
                 bool showbitparallelismfactor,
                 bool showtime,
                 GtProgressTimer *timer,
@@ -491,6 +515,8 @@ int gt_findmum(const GtEncseq *encseq,
                                  processmatch,
                                  &matchprocessinfo,
                                  bitparallelism,
+                                 bitparallelismwithbittab,
+                                 bitlength, 
                                  showbitparallelismfactor,
                                  showtime,
                                  timer,
@@ -529,6 +555,8 @@ int gt_findmum(const GtEncseq *encseq,
                                  processmatch,
                                  &matchprocessinfo,
                                  bitparallelism,
+                                 bitparallelismwithbittab,
+                                 bitlength, 
                                  showbitparallelismfactor,
                                  showtime,
                                  timer,
