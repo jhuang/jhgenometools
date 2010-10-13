@@ -189,7 +189,7 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
 
   /* option implications */
   gt_option_imply_either_2(option_c, option_b, option_r);
-  gt_option_imply(option_f, option_bit);
+  gt_option_imply_either_2(option_f, option_bit, option_bittab);
   gt_option_imply(option_bitlen, option_bittab);
 
   /* option exclusions */
