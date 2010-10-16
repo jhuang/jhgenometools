@@ -45,6 +45,76 @@ def determinemaxmatchminlength(reffile)
   end
 end
 
+# format repfind output to maxmat4 output 
+def formatrepfindoutput(filename)
+	if (File.exist?(filename))
+		begin 
+			file = File.new(filename, "r")    
+		rescue
+			STDERR.print "Could not open file #{filename}!\n"
+			exit 1
+		end
+	else
+		STDERR.print "File #{filename} does not exist!\n"
+		exit 1
+	end
+
+	data = file.readlines() 
+	output = File.new(filename, "w")
+	data.each do |line|
+		line.strip!
+		line_data = line.split(%r{\s+})
+			
+		output.printf("%d %d %s\n",line_data[2].to_i+1, line_data[6].to_i+1, line_data[0])
+	end
+	output.close
+end
+
+def formatmaxmat4output(filename)
+	if (File.exist?(filename))
+		begin 
+			file = File.new(filename, "r")    
+		rescue
+			STDERR.print "Could not open file #{filename}!\n"
+			exit 1
+		end
+	else
+		STDERR.print "File #{filename} does not exist!\n"
+		exit 1
+	end
+
+	data = file.readlines() 
+	output = File.new(filename, "w")
+	data.each do |line|
+		line.strip!
+		line_data = line.split(%r{\s+})
+			
+	  if (line_data.length==4) then		
+		  output.printf("%d %d %d\n",line_data[1].to_i, line_data[2].to_i, line_data[3].to_i)
+		elsif (line_data.length==3) then	
+		  output.printf("%d %d %d\n",line_data[0].to_i, line_data[1].to_i, line_data[2].to_i)
+		end	
+	end
+	output.close
+end
+
+
+def generatemummerresults(reffile, queryfile, matchmode)
+  reffilepath=addfilepath(reffile)
+  queryfilepath=addfilepath(queryfile)
+  if (matchmode=="mumreference") 
+			run "~/maxmat3/mm3src/maxmat3.x -#{matchmode} -b -l #{determinemaxmatchminlength(reffile)} -L -s -c -n #{reffilepath} #{queryfilepath}"
+			#run "grep -v '^>' #{$last_stdout} | sort" 
+      run "sed -e '/^>/d' #{$last_stdout} | sort"       
+  elsif (matchmode=="mum") 
+ 			run "~/maxmat3/mm3src/maxmat3.x -#{matchmode} -r -l #{determinemaxmatchminlength(reffile)} -s -c -n #{reffilepath} #{queryfilepath}"
+      run "sed -e '/^>/d' #{$last_stdout} | sort"          
+  elsif (matchmode=="maxmatch") 
+   	  run "~/maxmat3/mm3src/maxmat3.x -#{matchmode} -l #{determinemaxmatchminlength(reffile)} -L -s -n #{reffilepath} #{queryfilepath}"
+      run "sed -e '/^>/d' #{$last_stdout} | sort"  
+  end  
+  run "cp #{$last_stdout} #{$gttestdata}maxmat4-result/#{reffile}-#{queryfile}_#{matchmode}.result"
+end
 
 def checkmaxmat4withmummer(reffile,queryfile,matchmode)
   reffilepath=addfilepath(reffile)
@@ -56,35 +126,16 @@ def checkmaxmat4withmummer(reffile,queryfile,matchmode)
   if (matchmode=="mumreference") 
 			run_test("#{$bin}gt dev maxmat4 -#{matchmode} -b -l #{determinemaxmatchminlength(reffile)} -L -s -c #{pckname} #{queryfilepath}", :maxtime => 32000)
 			#run "grep -v '^>' #{$last_stdout} | sort" 
-      run "sed -e '/^>/d' #{$last_stdout}"
+      run "sed -e '/^>/d' #{$last_stdout} | sort"
   elsif (matchmode=="mum")
 			run_test("#{$bin}gt dev maxmat4 -#{matchmode} -r -l #{determinemaxmatchminlength(reffile)} -s -c #{pckname} #{queryfilepath}", :maxtime => 32000)
-      run "sed -e '/^>/d' #{$last_stdout}"
+      run "sed -e '/^>/d' #{$last_stdout} | sort"
   elsif (matchmode=="maxmatch") 
   		run_test("#{$bin}gt dev maxmat4 -#{matchmode} -l #{determinemaxmatchminlength(reffile)} -L -s #{pckname} #{queryfilepath}", :maxtime => 32000)
       run "sed -e '/^>/d' #{$last_stdout} | sort"
   end             
   run "diff -w #{$last_stdout} #{$gttestdata}maxmat4-result/#{reffile}-#{queryfile}_#{matchmode}.result"
 end
-
-
-def generatemummerresults(reffile, queryfile, matchmode)
-  reffilepath=addfilepath(reffile)
-  queryfilepath=addfilepath(queryfile)
-  if (matchmode=="mumreference") 
-			run "~/maxmat3/mm3src/maxmat3.x -#{matchmode} -b -l #{determinemaxmatchminlength(reffile)} -L -s -c -n #{reffilepath} #{queryfilepath}"
-			#run "grep -v '^>' #{$last_stdout} | sort" 
-      run "sed -e '/^>/d' #{$last_stdout}"       
-  elsif (matchmode=="mum") 
- 			run "~/maxmat3/mm3src/maxmat3.x -#{matchmode} -r -l #{determinemaxmatchminlength(reffile)} -s -c -n #{reffilepath} #{queryfilepath}"
-      run "sed -e '/^>/d' #{$last_stdout}"          
-  elsif (matchmode=="maxmatch") 
-   	  run "~/maxmat3/mm3src/maxmat3.x -#{matchmode} -l #{determinemaxmatchminlength(reffile)} -L -s -n #{reffilepath} #{queryfilepath}"
-      run "sed -e '/^>/d' #{$last_stdout} | sort"  
-  end  
-  run "cp #{$last_stdout} #{$gttestdata}maxmat4-result/#{reffile}-#{queryfile}_#{matchmode}.result"
-end
-
 
 
 if $gttestdata then
@@ -125,60 +176,6 @@ if $gttestdata then
       end
     end
   end
-end
-
-# format repfind output to maxmat4 output 
-def formatrepfindoutput(filename)
-	if (File.exist?(filename))
-		begin 
-			file = File.new(filename, "r")    
-		rescue
-			STDERR.print "Could not open file #{filename}!\n"
-			exit 1
-		end
-	else
-		STDERR.print "File #{filename} does not exist!\n"
-		exit 1
-	end
-
-	data = file.readlines() 
-	output = File.new(filename, "w")
-	data.each do |line|
-		line.strip!
-		line_data = line.split(%r{\s+})
-			
-		output.printf("%d %d %s\n",line_data[2].to_i+1, line_data[6].to_i+1, line_data[0])
-	end
-	output.close
-end
-
-
-def formatmaxmat4output(filename)
-	if (File.exist?(filename))
-		begin 
-			file = File.new(filename, "r")    
-		rescue
-			STDERR.print "Could not open file #{filename}!\n"
-			exit 1
-		end
-	else
-		STDERR.print "File #{filename} does not exist!\n"
-		exit 1
-	end
-
-	data = file.readlines() 
-	output = File.new(filename, "w")
-	data.each do |line|
-		line.strip!
-		line_data = line.split(%r{\s+})
-			
-	  if (line_data.length==4) then		
-		  output.printf("%d %d %d\n",line_data[1].to_i, line_data[2].to_i, line_data[3].to_i)
-		elsif (line_data.length==3) then	
-		  output.printf("%d %d %d\n",line_data[0].to_i, line_data[1].to_i, line_data[2].to_i)
-		end	
-	end
-	output.close
 end
 
 

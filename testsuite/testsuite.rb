@@ -163,6 +163,8 @@ require 'gt_env_options_include'
 require 'scripts_include'
 require 'gt_maxmat4_include.rb'
 require 'gt_maxmat4_prebwt_include.rb'
+require 'gt_maxmat4_prebwt_bit_include.rb'
+require 'gt_maxmat4_prebwt_bittab_include.rb'
 
 if $arguments["gcov"] then
   require 'gcov_include' # must be last

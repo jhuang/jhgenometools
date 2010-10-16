@@ -46,13 +46,13 @@ def checkmaxmat4withmummer(reffile,queryfile,matchmode)
 							 "#{reffilepath} -indexname #{pckname} -sprank -dna -ssp -des -sds -pl"       
 	run_test "#{$bin}gt prebwt -pck #{pckname} -maxdepth 9"				                                        
   if (matchmode=="mumreference") 
-			run_test("#{$bin}gt dev maxmat4 -#{matchmode} -p -b -l #{determinemaxmatchminlength(reffile)} -L -s -c #{pckname} #{queryfilepath}", :maxtime => 32000)
-      run "sed -e '/^>/d' #{$last_stdout} | sort"
+			run_test("#{$bin}gt dev maxmat4 -#{matchmode} -p -bittab -b -l #{determinemaxmatchminlength(reffile)} -L -s -c #{pckname} #{queryfilepath}", :maxtime => 32000)
+      run "sed -e '/^>/d' #{$last_stdout} | sort"  # was added later
   elsif (matchmode=="mum")
-			run_test("#{$bin}gt dev maxmat4 -#{matchmode} -p -r -l #{determinemaxmatchminlength(reffile)} -s -c #{pckname} #{queryfilepath}", :maxtime => 32000)
-      run "sed -e '/^>/d' #{$last_stdout} | sort"
+			run_test("#{$bin}gt dev maxmat4 -#{matchmode} -p -bittab -r -l #{determinemaxmatchminlength(reffile)} -s -c #{pckname} #{queryfilepath}", :maxtime => 32000)
+      run "sed -e '/^>/d' #{$last_stdout} | sort"  # was added later
   elsif (matchmode=="maxmatch") 
-  		run_test("#{$bin}gt dev maxmat4 -#{matchmode} -p -l #{determinemaxmatchminlength(reffile)} -L -s #{pckname} #{queryfilepath}", :maxtime => 32000)
+  		run_test("#{$bin}gt dev maxmat4 -#{matchmode} -p -bittab -l #{determinemaxmatchminlength(reffile)} -L -s #{pckname} #{queryfilepath}", :maxtime => 32000)
       run "sed -e '/^>/d' #{$last_stdout} | sort"
   end             
   run "diff -w #{$last_stdout} #{$gttestdata}maxmat4-result/#{reffile}-#{queryfile}_#{matchmode}.result"
@@ -62,18 +62,18 @@ if $gttestdata then
   repfindtestfiles.each do |reffile|  
     repfindtestfiles.each do |queryfile|
       if reffile != queryfile				
-        Name "maxmat4 -mumref -p #{reffile}/#{queryfile} (mummer)"
-        Keywords "check_maxmat4_mumreference_prebwt_with_mummer"
+        Name "maxmat4 -mumref -p -bittab #{reffile}/#{queryfile}(m)"
+        Keywords "check_maxmat4_mumreference_prebwt_bittab_with_mummer"
         Test do
           checkmaxmat4withmummer(reffile,queryfile,"mumreference")
         end
-        Name "maxmat4 -maxmatch -p #{reffile}/#{queryfile} (mummer)"
-        Keywords "check_maxmat4_maxmatch_prebwt_with_mummer"
+        Name "maxmat4 -maxmatch -p -bittab #{reffile}/#{queryfile}(m)"
+        Keywords "check_maxmat4_maxmatch_prebwt_bittab_with_mummer"
         Test do
           checkmaxmat4withmummer(reffile,queryfile,"maxmatch")
         end   
-        Name "maxmat4 -mum -p #{reffile}/#{queryfile} (mummer)"
-        Keywords "check_maxmat4_mum_prebwt_with_mummer"
+        Name "maxmat4 -mum -p -bittab #{reffile}/#{queryfile}(m)"
+        Keywords "check_maxmat4_mum_prebwt_bittab_with_mummer"
         Test do
           checkmaxmat4withmummer(reffile,queryfile,"mum")
         end      
@@ -159,7 +159,7 @@ def checkmaxmat4withrepfind(reffile,queryfile,minlength)
   run_test "#{$bin}gt packedindex mkindex -bsize 10 -locfreq 8 -dir rev -db " +
            "#{reffilepath} -indexname #{pckname} -sprank -dna -ssp -des -sds -pl"   
   run_test "#{$bin}gt prebwt -pck #{pckname} -maxdepth 9"	   
-  run_test("#{$bin}gt dev maxmat4 -maxmatch -p -l #{minlength} -L #{pckname} #{queryfilepath}", :maxtime => 32000)
+  run_test("#{$bin}gt dev maxmat4 -maxmatch -p -bittab -l #{minlength} -L #{pckname} #{queryfilepath}", :maxtime => 32000)
   formatmaxmat4output("#{$last_stdout}")
   run "sed -e '/^>/d' #{$last_stdout} | sort"            
   run "mv #{$last_stdout} maxmat4.result"
@@ -173,8 +173,8 @@ allfiles.each do |reffile|
   allfiles.each do |queryfile|
     [12,15,18,21,24].each do |minlength| 
 			if queryfile != reffile
-				Name "maxmat4 -p #{minlength} #{reffile}/#{queryfile} (repfind)" # actually is maxmat4 -maxmatch -p -l
-				Keywords "check_maxmat4_maxmatch_prebwt_with_repfind"
+				Name "maxmat4 -p -bittab #{minlength} #{reffile}/#{queryfile}(r)"
+				Keywords "check_maxmat4_maxmatch_prebwt_bittab_with_repfind"
 				Test do
 					checkmaxmat4withrepfind(reffile,queryfile,minlength)
 				end
@@ -182,13 +182,3 @@ allfiles.each do |reffile|
     end
   end
 end
-
-
-#Name "gt dev maxmat4 -p without pbt-file"
-#Keywords "gt_maxmat4_prebwt_inputerror"
-#Test do                                               
-  #run_test "#{$bin}gt packedindex mkindex -bsize 10 -locfreq 8 -dir rev -db " +
-           #"#{$testdata}at1MB -indexname at1MBpck -sprank -dna -ssp -des -sds -pl", :maxtime => 32000 
-  #run_test "#{$bin}gt dev maxmat4 -p at1MBpck #{$testdata}U89959_genomic.fas", :retval => 1, :maxtime => 32000  
-  #grep $last_stderr, ""
-#end

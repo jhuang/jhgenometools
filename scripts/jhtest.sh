@@ -107,6 +107,30 @@ then
 		./testsuite.rb \
          ${MC} ${SE} -keywords 'check_maxmat4_maxmatch_prebwt_with_repfind' \
          -gttestdata ${GTTESTDATA}
+		./testsuite.rb \
+				 ${MC} ${SE} -keywords 'check_maxmat4_mumreference_prebwt_bit_with_mummer' \
+				 -gttestdata ${GTTESTDATA}
+		./testsuite.rb \
+				 ${MC} ${SE} -keywords 'check_maxmat4_maxmatch_prebwt_bit_with_mummer' \
+				 -gttestdata ${GTTESTDATA}
+		./testsuite.rb \
+				 ${MC} ${SE} -keywords 'check_maxmat4_mum_prebwt_bit_with_mummer' \
+				 -gttestdata ${GTTESTDATA}				 
+		./testsuite.rb \
+         ${MC} ${SE} -keywords 'check_maxmat4_maxmatch_prebwt_bit_with_repfind' \
+         -gttestdata ${GTTESTDATA}           
+		./testsuite.rb \
+				 ${MC} ${SE} -keywords 'check_maxmat4_mumreference_prebwt_bittab_with_mummer' \
+				 -gttestdata ${GTTESTDATA}
+		./testsuite.rb \
+				 ${MC} ${SE} -keywords 'check_maxmat4_maxmatch_prebwt_bittab_with_mummer' \
+				 -gttestdata ${GTTESTDATA}
+		./testsuite.rb \
+				 ${MC} ${SE} -keywords 'check_maxmat4_mum_prebwt_bittab_with_mummer' \
+				 -gttestdata ${GTTESTDATA}				 
+		./testsuite.rb \
+         ${MC} ${SE} -keywords 'check_maxmat4_maxmatch_prebwt_bittab_with_repfind' \
+         -gttestdata ${GTTESTDATA}         
 	fi
   cd ..
 fi
