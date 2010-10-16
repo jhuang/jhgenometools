@@ -14,6 +14,12 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+/*
+ * TODO:
+ * 1. use the prebwt files to accelerate the programming run speed
+ * 
+ * */
+
 #include <stdio.h>
 
 //#include "core/chardef.h"
@@ -86,10 +92,12 @@ static unsigned long lcp(const GtEncseq *encseq,
                             
 int gt_pck_bitparallelism_bittab(const GtUchar *query,
 																	unsigned long querylen,
-																	const FMindex *index,
+																	const BWTSeq *bwtSeq,
 																	const GtEncseq *encseq,
+																	GT_UNUSED const Mbtab **mbtab,
+                                  GT_UNUSED unsigned int maxdepth, 
 																	unsigned long totallength,
-																	GT_UNUSED unsigned long leastlength,
+																	unsigned long leastlength,
 																	//Findmatchfunction findmatchfunction,
 																	GT_UNUSED const GtMatchmode matchmode,
 																	GT_UNUSED Processmatchfunction processmatch,
@@ -104,8 +112,6 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
   int had_err = 0;
   GtStackMaxmat4NodeBittab stack;
   Maxmat4NodeBittab root, current, child;
-  Mbtab *tmpmbtab;
-  unsigned long *rangeOccs;
   unsigned long resize = 64UL; 
   unsigned long /*maxdepth,*/ rangesize, idx;
   
@@ -113,25 +119,40 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
     
   GtUchar alphasize;
   unsigned int numofchars;
-  numofchars = gt_alphabet_num_of_chars(gt_encseq_alphabet(encseq));
+  
+  GtUchar cc;
+  Symbol curSym;
+  const MRAEnc *alphabet;
+  struct GtUlongPair seqpospair;
+  //gt_assert(bwtSeq);
+  const FMindex *fmindex = (const FMindex *)bwtSeq;
+  alphabet = BWTSeqGetAlphabet(bwtSeq);
+  numofchars = gt_alphabet_num_of_chars(gt_encseq_alphabet(encseq));  /* GtAlphabet gt_encseq_alphabet */
   alphasize = (GtUchar) numofchars;
   
+  //Mbtab *tmpmbtab;
+  // const Mbtab *mbptr; 
+  unsigned long *rangeOccs;
   rangeOccs = gt_calloc((size_t) GT_MULT2(alphasize), sizeof (*rangeOccs));
-  tmpmbtab = gt_calloc((size_t) (alphasize + 3), sizeof (*tmpmbtab ));
+  //tmpmbtab = gt_calloc((size_t) (alphasize + 3), sizeof (*tmpmbtab ));
     
-  unsigned long i;  
+  unsigned long i, j, n=0, m=0;  
 	GtBittab **eqsvector;
-	eqsvector = gt_malloc(sizeof (GtBittab*) * alphasize);
-	for (i = 0; i < alphasize; i++) {
-		eqsvector[(GtUchar)i] = gt_bittab_new(bitlength);
+	GtBittab *tmpbittab = gt_bittab_new(bitlength);  /* temporary bittab for every round */
+	
+	eqsvector = gt_malloc(sizeof (GtBittab*) * alphasize * leastlength);
+	for (i=0; i<alphasize*leastlength; i++) {
+		eqsvector[i] = gt_bittab_new(bitlength);
 	}
 	
-	double offsettimes = 0.0;
+  struct matchBound bwtbound;
+	
+	unsigned long realcalcquerypos = 0, offsettimes = 0, realcalcnodes=0;
      
   while (offset < querylen) 
   {
-		offsettimes++;
 		//printf("------offset=%lu\n",offset);
+		offsettimes++;
 		/* initialize the position of most left query of boundary matches */
 		unsigned long mostleftquerypos = offset + bitlength - leastlength + 1;
 		/* in last round or querylen < bitlength */
@@ -139,12 +160,22 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 		
 		if (islastround)
 		{  
-			gt_maxmat4_initeqsvectorrev(eqsvector,alphasize,bitlength,query+offset,querylen-offset);
+			gt_maxmat4_initeqsvectorrev(eqsvector,alphasize,bitlength,leastlength,query+offset,querylen-offset);
 		} 
 		else
 		{
-			gt_maxmat4_initeqsvectorrev(eqsvector,alphasize,bitlength,query+offset,bitlength);  			
+			gt_maxmat4_initeqsvectorrev(eqsvector,alphasize,bitlength,leastlength,query+offset,bitlength);  			
 		}			
+		
+		 
+		for (i=0; i<alphasize; i++) {
+			gt_bittab_equal(tmpbittab, eqsvector[i*leastlength]); 
+			for (j=1; j<leastlength; j++) {  /* j corresponds to current.depth */
+			  gt_bittab_shift_right_equal(tmpbittab);
+        gt_bittab_equal(eqsvector[i*leastlength+j], tmpbittab);
+			}
+	  }
+
 		
 		GT_STACK_INIT(&stack, resize);
 		
@@ -152,11 +183,11 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 		root.lower = 0;
 		root.upper = totallength + 1;
 		GtBittab *rootprefixofsuffixbits = gt_bittab_new(bitlength);
-		long position;
-		for (position = 0; position < bitlength; position++) {
-			gt_bittab_set_bit(rootprefixofsuffixbits, position);
+		for (i = 0; i < bitlength; i++) {
+			gt_bittab_set_bit(rootprefixofsuffixbits, 1);
 		}  /* init all positions as 1 */
 		root.prefixofsuffixbits = rootprefixofsuffixbits;
+		root.code = 0;
 		GT_STACK_PUSH(&stack,root);
 
 		if (showtime)
@@ -166,16 +197,17 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 																				stdout);
 		}
     
-    //if (matchmode == GT_MATCHMODE_MAXMATCH) 
-		//{
+    if (matchmode == GT_MATCHMODE_MAXMATCH) 
+		{
 			while (!GT_STACK_ISEMPTY(&stack))
 			{
 				current = GT_STACK_POP(&stack);
 				gt_assert(current.lower < current.upper);
 				
 				/* find nodes whose depth is equal than least length as seeds */
-				if (current.depth == leastlength) 
+				if (current.depth == leastlength)
 				{
+					realcalcnodes++;
 					/* save all subject positions in an array */
 					const unsigned long subjectpositions_size = current.upper - current.lower;
 					unsigned long subjectpositions[subjectpositions_size];
@@ -184,7 +216,7 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 					for (bwtboundthisline=current.lower, i=0;bwtboundthisline < current.upper; bwtboundthisline++, i++)
 					{					
 							unsigned long subjectposthisline =
-							gt_voidpackedfindfirstmatchconvert(index,
+							gt_voidpackedfindfirstmatchconvert(fmindex,
 																								 bwtboundthisline,
 																								 current.depth);
 							subjectpositions[i] = subjectposthisline;
@@ -194,7 +226,8 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 					{
 						/* for every query position */	
 						if (gt_bittab_bit_is_set(current.prefixofsuffixbits, i)) 
-						{													
+						{					
+							realcalcquerypos++;								
 							unsigned long querypos;	
 							if (islastround)
 							{
@@ -214,8 +247,7 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 																lcp(encseq,
 																		subjectpositions[j] + current.depth,
 																		totallength,
-																		query+querypos+current.depth,
-																		//query+offset+bitlength);  /* qrightbound */
+																		query + querypos + current.depth,
 																		query+querylen);         /* qend */								
 									unsigned long matchlength = current.depth + additionalmatchlength;	
 
@@ -233,70 +265,229 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 							}																																							
 						}
 					}
-				}
+				} 
+				else if (current.depth < leastlength) 
+				{
 				
-				/* fill data in tmpmbtab from different current.lower and current.upper */
-				rangesize = gt_bwtrangesplitallwithoutspecial(tmpmbtab,
-																											rangeOccs,
-																											index,
-																											current.lower,
-																											current.upper);
-				gt_assert(rangesize <= alphasize);
-							
-				for (idx = 0; idx < rangesize; idx++)
-				{    
-					gt_assert (tmpmbtab[idx].lowerbound <= tmpmbtab[idx].upperbound);
+					/* fill data in tmpmbtab from different current.lower and current.upper */
+					//if (current.depth + 1 > 5)
+					//{
+						rangesize
+							= MRAEncGetRangeSize(EISGetAlphabet(bwtSeq->seqIdx),0);																							
+						gt_assert(rangesize <= alphasize);
+									
+						BWTSeqPosPairRangeOcc(bwtSeq, 0, current.lower, current.upper,rangeOccs);		
+				  //}				  
+				  		//mbptr = mbtab[1] + 1;	
+				  		//printf("------mbptr->lowerbound=%lu, mbptr->upperbound=%lu\n",mbptr->lowerbound, mbptr->upperbound);
+						  //bwtbound.start = mbptr->lowerbound;
+						  //bwtbound.end = mbptr->upperbound;
 					
-					/* only the nodes that has child is allowed to enter */
-					if ( (tmpmbtab[idx].lowerbound != tmpmbtab[idx].upperbound) )  /* in reference with idx is extensible */
+					for (idx = 0; idx < rangesize; idx++)
 					{  
-						if (current.depth < leastlength) 
-						{			
-							/* tmpmbtab[idx] is a branch of current node, 
-							 * that is, tmpmbtab[idx] can be the only child of current node
-							 * or one of children of current onde */  
-							GtBittab *prefixofsuffixbits = gt_bittab_new(bitlength);
-							//////gt_bittab_show(current.prefixofsuffixbits, stdout);
+						n++;
+						
+	
+						//if (current.depth + 1 <= 5)
+						//{		           
+							//child.code = current.code * alphasize + idx;	
+							//mbptr = mbtab[current.depth+1] + child.code;	
+						  //bwtbound.start = mbptr->lowerbound;
+						  //bwtbound.end = mbptr->upperbound;
+						//} 
+						//else 
+						//{ 		
+							bwtbound.start = bwtSeq->count[idx] + rangeOccs[idx];
+							bwtbound.end = bwtSeq->count[idx] + rangeOccs[rangesize+idx];
+						//}
+											
+						/* only the nodes that has child is allowed to enter */
+						if (bwtbound.start < bwtbound.end)  /* in reference with idx is extensible */
+						{  
+							//if ( current.depth < leastlength ) 
+							//{			
+								/* tmpmbtab[idx] is a branch of current node, 
+								 * that is, tmpmbtab[idx] can be the only child of current node
+								 * or one of children of current onde */  
 
-							if (current.depth > 0UL)
-							{
-								GtBittab *tmp = gt_bittab_new(bitlength);
-								gt_bittab_equal(tmp, eqsvector[(GtUchar)idx]);   
-								//////gt_bittab_show(tmp, stdout);        
-		
-								unsigned long i;
-								for (i=0;i < current.depth;i++) {
-									gt_bittab_shift_right_equal(tmp);
+								GtBittab *prefixofsuffixbits = gt_bittab_new(bitlength);  /* generate a lot of bits for nodes */
+								//////gt_bittab_show(current.prefixofsuffixbits, stdout);
+								if (current.depth > 0UL)
+								{								
+									gt_bittab_and(prefixofsuffixbits, current.prefixofsuffixbits, eqsvector[idx*leastlength+current.depth]);
+								} else
+								{
+									gt_bittab_equal(prefixofsuffixbits, eqsvector[idx*leastlength]);   
 								}
-								//gt_bittab_shift_right_equal_with_units(tmp, current.depth);  
-								//////gt_bittab_show(tmp, stdout);
-								gt_bittab_and(prefixofsuffixbits, current.prefixofsuffixbits, tmp);
-								gt_bittab_delete(tmp);
-							} else
-							{
-								gt_bittab_equal(prefixofsuffixbits, eqsvector[(GtUchar)idx]);   
-							}
-							//////printf("current.lower=%lu,current.upper=%lu,current.depth=%lu--%lu-->child.lower=%lu,child.upper=%lu,child.depth=%lu\n",current.lower,current.upper,current.depth,idx,tmpmbtab[idx].lowerbound,tmpmbtab[idx].upperbound,current.depth+1);
-							//////gt_bittab_show(prefixofsuffixbits, stdout);
-							//////printf("------------------------\n");
-							if (gt_bittab_count_set_bits(prefixofsuffixbits) > 0) {		
-								child.lower = tmpmbtab[idx].lowerbound;  /* record match position in reference */
-								child.upper = tmpmbtab[idx].upperbound;		
-								child.depth = current.depth + 1;  			 /* record match length */
-								child.prefixofsuffixbits = prefixofsuffixbits;  /*	record match position in query */
-								GT_STACK_PUSH(&stack,child);						 		
-							} 
-							else
-							{
-								gt_bittab_delete(prefixofsuffixbits);			
-							}										
+								//////printf("current.lower=%lu,current.upper=%lu,current.depth=%lu--%lu-->child.lower=%lu,child.upper=%lu,child.depth=%lu\n",current.lower,current.upper,current.depth,idx,tmpmbtab[idx].lowerbound,tmpmbtab[idx].upperbound,current.depth+1);
+								//////gt_bittab_show(prefixofsuffixbits, stdout);
+								//////printf("------------------------\n");
+								if (gt_bittab_count_set_bits(prefixofsuffixbits) > 0) {		
+									child.lower = bwtbound.start;  /* record match position in reference */
+									child.upper = bwtbound.end;		
+									child.depth = current.depth + 1;  			 /* record match length */
+									child.prefixofsuffixbits = prefixofsuffixbits;  /*	record match position in query */
+									//child.code = current.code * alphasize + idx;	
+									GT_STACK_PUSH(&stack,child);	
+									m++;					 		
+								} 
+								else
+								{
+									gt_bittab_delete(prefixofsuffixbits);			
+								}										
+							//}
+					
 						}
-				
 					}
 				}
 				gt_bittab_delete(current.prefixofsuffixbits);
 			}
-	  //}
+	  }
+	  else  /* MUM or MUMREFERENCE */
+	  {
+			while (!GT_STACK_ISEMPTY(&stack))
+			{
+				current = GT_STACK_POP(&stack);
+				gt_assert(current.lower < current.upper);
+					
+				/* find nodes whose depth is equal than least length as seeds */				
+				if (current.depth == leastlength)
+				{
+					realcalcnodes++;
+					//printf("---1---current.lower=%lu, current.upper=%lu, subjectpos=%lu\n",current.lower, current.upper, current.depth);
+					//gt_bittab_show(current.prefixofsuffixbits, stdout);
+
+					for (i=0; i<bitlength; i++)
+					{
+						/* for every query position */	
+						if (gt_bittab_bit_is_set(current.prefixofsuffixbits, i)) 
+						{					
+							realcalcquerypos++;								
+							unsigned long querypos;	
+							if (islastround)
+							{
+								querypos = querylen - (bitlength-i);
+							} 
+							else
+							{
+								querypos = offset + i;
+							}
+							
+							bwtbound.start = current.lower;
+							bwtbound.end = current.upper;
+							unsigned long depth = current.depth;
+							//printf("---1.5---querypos=%lu, depth=%lu, querylen=%lu\n",querypos, depth, querylen);
+							while ( (querypos+depth) < querylen && (bwtbound.start+1) < bwtbound.end )
+							{
+								cc = *(query+querypos+depth);
+								//if (ISSPECIAL (cc))
+								//{
+									//printf("There is a special character %d\n", cc);
+									//return 0;
+								//}
+								curSym = MRAEncMapSymbol(alphabet, cc);
+								seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
+																												 bwtbound.start,bwtbound.end);
+								bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
+								bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;		
+								depth++;	
+							}
+							//printf("---2---current.lower=%lu, current.upper=%lu, current.depth=%lu\n",current.lower, current.upper, current.depth);
+							/* calculate match length of every combination between subjectpos and querypos */
+							if (bwtbound.start+1 == bwtbound.end) {
+								unsigned long subjectpos =
+								gt_voidpackedfindfirstmatchconvert(fmindex,
+																									 bwtbound.start,
+																									 depth);
+								if ( isleftmaximal(encseq,subjectpos,query,query+querypos) ) {
+									unsigned long additionalmatchlength = 
+																lcp(encseq,
+																		subjectpos + depth,
+																		totallength,
+																		query + querypos + depth,
+																		query + querylen);         /* qend */								
+									unsigned long matchlength = depth + additionalmatchlength;	
+									
+									/* 
+									 * if match is longer than initial value of mostleftquerypos: offset + bitlength - leastlength + 1
+									 * mostleftquerypos is replaced with the value since it has to keep uniquess property
+									 */
+									//if (querypos + matchlength + 1 > mostleftquerypos)
+									//{
+									  //mostleftquerypos = querypos + matchlength + 1;
+                  //}
+									/*
+									 * print or save the result
+									 */
+									processmatch(encseq,
+															 query,
+															 querypos, 
+															 querylen,
+															 matchlength,
+															 subjectpos,
+															 showspecinfo);	
+								}
+							}																																						
+						}
+					}
+				}
+				else if (current.depth < leastlength) 
+				{
+				
+					/* fill data in tmpmbtab from different current.lower and current.upper */
+					rangesize
+						= MRAEncGetRangeSize(EISGetAlphabet(bwtSeq->seqIdx),0);																							
+					gt_assert(rangesize <= alphasize);									
+					BWTSeqPosPairRangeOcc(bwtSeq, 0, current.lower, current.upper,rangeOccs);		
+					
+					for (idx = 0; idx < rangesize; idx++)
+					{  
+						n++;		
+					  bwtbound.start = bwtSeq->count[idx] + rangeOccs[idx];
+						bwtbound.end = bwtSeq->count[idx] + rangeOccs[rangesize+idx];
+											
+						/* only the nodes that has child is allowed to enter */
+						if (bwtbound.start < bwtbound.end)  /* in reference with idx is extensible */
+						{  
+							//if ( current.depth < leastlength ) 
+							//{			
+								/* tmpmbtab[idx] is a branch of current node, 
+								 * that is, tmpmbtab[idx] can be the only child of current node
+								 * or one of children of current onde */  
+
+								GtBittab *prefixofsuffixbits = gt_bittab_new(bitlength);  /* generate a lot of bits for nodes */
+								//////gt_bittab_show(current.prefixofsuffixbits, stdout);
+								if (current.depth > 0UL)
+								{								
+									gt_bittab_and(prefixofsuffixbits, current.prefixofsuffixbits, eqsvector[idx*leastlength+current.depth]);
+								} else
+								{
+									gt_bittab_equal(prefixofsuffixbits, eqsvector[idx*leastlength]);   
+								}
+								//////printf("current.lower=%lu,current.upper=%lu,current.depth=%lu--%lu-->child.lower=%lu,child.upper=%lu,child.depth=%lu\n",current.lower,current.upper,current.depth,idx,tmpmbtab[idx].lowerbound,tmpmbtab[idx].upperbound,current.depth+1);
+								//////gt_bittab_show(prefixofsuffixbits, stdout);
+								//////printf("------------------------\n");
+								if (gt_bittab_count_set_bits(prefixofsuffixbits) > 0) {		
+									child.lower = bwtbound.start;  /* record match position in reference */
+									child.upper = bwtbound.end;		
+									child.depth = current.depth + 1;  			 /* record match length */
+									child.prefixofsuffixbits = prefixofsuffixbits;  /*	record match position in query */
+									//child.code = current.code * alphasize + idx;	
+									GT_STACK_PUSH(&stack,child);	
+									m++;					 		
+								} 
+								else
+								{
+									gt_bittab_delete(prefixofsuffixbits);			
+								}										
+							//}
+					
+						}
+					}
+				}
+				gt_bittab_delete(current.prefixofsuffixbits);
+			}			
+		}
 	  							
 		if (islastround)
 		{
@@ -310,16 +501,18 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 
 	if (showbitparallelismfactor && querylen!=0)
 	{
-		printf("# BIT PARALLELISM FACTOR=%3.2lf\n",(offsettimes+1)/querylen);
+		printf("# BIT PARALLELISM FACTOR=%3.2lf  nodes/move=%3.2lf  realcalcquerypos=%lu  realcalcnodes=%lu  n=%3.2lf  m=%3.2lf\n",(double)realcalcquerypos/querylen, (double)realcalcnodes/(offsettimes+1), realcalcquerypos, realcalcnodes, (double)n/(offsettimes+1), (double)m/(offsettimes+1));
 	}
 	
   // gt_logger_log(logger, "max stack depth = %lu", maxdepth);
   GT_STACK_DELETE(&stack);
   gt_free(rangeOccs);
-  gt_free(tmpmbtab);
+  //gt_free(tmpmbtab);
+  
+  gt_bittab_delete(tmpbittab);
   							
 	for (i = 0; i < alphasize; i++) {
-		gt_bittab_delete(eqsvector[(GtUchar)i]);
+		gt_bittab_delete(eqsvector[i*leastlength]);
 	}
   gt_free(eqsvector);
   return had_err;
