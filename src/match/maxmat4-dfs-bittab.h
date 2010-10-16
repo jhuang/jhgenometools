@@ -26,6 +26,7 @@ typedef struct {
                   lower,
                   upper;  
   GtBittab *prefixofsuffixbits;
+  GtCodetype code; 
 } Maxmat4NodeBittab;
 
 GT_STACK_DECLARESTRUCT(Maxmat4NodeBittab, 256UL);
