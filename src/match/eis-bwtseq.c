@@ -705,7 +705,6 @@ static unsigned long lcp(const GtEncseq *encseq,
   {
     qptr++;
     dbrightbound++;
-    /* gt_assert(dbrightbound < totallength); */
     if (dbrightbound < totallength) 
     {
 			dbrightboundchar = gt_encseq_get_encoded_char(encseq,
@@ -883,7 +882,7 @@ bool gt_packedindexmaxmatches(const BWTSeq *bwtSeq,
 
         if ( isleftmaximal(encseq,subjectposthisline,query,qstart) ) {
           /* every line moves forwards */
-          unsigned long matchlengththisline = matchlength;
+          unsigned long matchlengththisline;
 
           /*
            * calculate long common prefix for every line
@@ -891,13 +890,20 @@ bool gt_packedindexmaxmatches(const BWTSeq *bwtSeq,
            * from (subjectposthisline + matchlengththisline)
            * against query sequence from qptr+1
            */
-          unsigned long additionalmatchlengththisline =\
-                                  lcp(encseq,
-                                      subjectposthisline + matchlengththisline,
-                                      totallength,
-                                      qptr+1,
-                                      qend);
-          matchlengththisline += additionalmatchlengththisline;
+					if ((subjectposthisline + matchlength) < totallength)
+					{
+						unsigned long additionalmatchlengththisline =\
+																		lcp(encseq,
+																				subjectposthisline + matchlength,
+																				totallength,
+																				qptr+1,
+																				qend);
+						matchlengththisline = matchlength + additionalmatchlengththisline;
+					}
+					else if ((subjectposthisline + matchlength) == totallength)
+					{
+						matchlengththisline = matchlength;
+					} 
 
           /*
            * print the result
@@ -921,7 +927,6 @@ bool gt_packedindexmaxmatches(const BWTSeq *bwtSeq,
 
 /** for option mumreference using prebwt */
 bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
-                                 /* relevant for BWTSeq */
                                  const Mbtab **mbtab,
                                  /* maximaldepth of boundaries */
                                  unsigned int maxdepth,
@@ -941,7 +946,6 @@ bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
   GtUchar cc;
   const GtUchar *qptr;
   struct matchBound bwtbound;
-  //  struct matchBound bwtbound2;
   struct GtUlongPair seqpospair;
   Symbol curSym;
   unsigned long matchlength = 0;
@@ -967,19 +971,10 @@ bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
   matchlength = (unsigned long) (qptr - qstart + 1);
   qptr++;
 	if (matchlength <= maxdepth)
-	{
-		//  printf("--------------------------------------------------------------\n");
-		//  printf("---%lu---code=%lu, cc=%u\n",matchlength, code, cc);
-				
-		//  curSym = MRAEncMapSymbol(alphabet, cc);
-    //  bwtbound2.start = bwtSeq->count[curSym];
-    //  bwtbound2.end = bwtSeq->count[curSym+1];
-    //  printf("---%lu---bwtbound2.start=%lu, bwtbound2.end=%lu\n",matchlength,bwtbound2.start, bwtbound2.end);
-    
-    mbptr = mbtab[matchlength] + code + cc;		// in this point, code is equal 0, cc is different
+	{    
+    mbptr = mbtab[matchlength] + code + cc;		/* in this point, code is equal 0, cc is different */
 		bwtbound.start = mbptr->lowerbound;
 		bwtbound.end = mbptr->upperbound;
-		//  printf("---%lu---bwtbound.start=%lu, bwtbound.end=%lu\n",matchlength,bwtbound.start, bwtbound.end);
     code = cc;
 	} 
 	else 
@@ -987,11 +982,7 @@ bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
 		curSym = MRAEncMapSymbol(alphabet, cc);
 		bwtbound.start = bwtSeq->count[curSym];
 		bwtbound.end = bwtSeq->count[curSym+1];
-		//  printf("---%lu---bwtbound3.start=%lu, bwtbound3.end=%lu\n",matchlength,bwtbound.start, bwtbound.end);
 	}
-
-
-
 
   while (qptr < qend && bwtbound.start < bwtbound.end)
   {
@@ -1003,21 +994,11 @@ bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
     
     matchlength = (unsigned long) (qptr - qstart + 1);
 		if (matchlength <= maxdepth)
-		{		
-			//  printf("---%lu---code=%lu, cc=%u\n",matchlength, code, cc);
-								
-			//  curSym = MRAEncMapSymbol(alphabet, cc);
-			//  seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
-			//  																				 bwtbound.start,bwtbound.end);
-			//  bwtbound2.start = bwtSeq->count[curSym] + seqpospair.a;
-			//  bwtbound2.end = bwtSeq->count[curSym] + seqpospair.b;
-      //  printf("---%lu---bwtbound2.start=%lu, bwtbound2.end=%lu, %lu, %lu\n",matchlength,bwtbound2.start, bwtbound2.end, seqpospair.a, seqpospair.b);
-            
+		{		            
 			code = code * alphasize + cc;	
 			mbptr = mbtab[matchlength] + code;		
 			bwtbound.start = mbptr->lowerbound;
 			bwtbound.end = mbptr->upperbound;
-			//  printf("---%lu---bwtbound.start=%lu, bwtbound.end=%lu\n",matchlength,bwtbound.start, bwtbound.end);
 		} 
 		else 
 		{
@@ -1026,8 +1007,6 @@ bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
 																							 bwtbound.start,bwtbound.end);
 			bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
 			bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;
-			//  printf("---%lu---code=%lu, cc=%u\n",matchlength, code, cc);
-			//  printf("---%lu---bwtbound3.start=%lu, bwtbound3.end=%lu\n",matchlength,bwtbound.start, bwtbound.end);
 		}
 
     /*
@@ -1079,7 +1058,6 @@ bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
 
 /** for option maxmatch using prebwt */
 bool gt_packedindexmaxmatchesusingprebwt(const BWTSeq *bwtSeq,
-                              /* relevant for BWTSeq */
                               const Mbtab **mbtab,
                               /* maximaldepth of boundaries */  
                               unsigned int maxdepth,    
@@ -1174,7 +1152,7 @@ bool gt_packedindexmaxmatchesusingprebwt(const BWTSeq *bwtSeq,
 
         if ( isleftmaximal(encseq,subjectposthisline,query,qstart) ) {
           /* every line moves forwards */
-          unsigned long matchlengththisline = matchlength;
+          unsigned long matchlengththisline;
 
           /*
            * calculate long common prefix for every line
@@ -1182,13 +1160,20 @@ bool gt_packedindexmaxmatchesusingprebwt(const BWTSeq *bwtSeq,
            * from (subjectposthisline + matchlengththisline)
            * against query sequence from qptr+1
            */
-          unsigned long additionalmatchlengththisline =\
-                                  lcp(encseq,
-                                      subjectposthisline + matchlengththisline,
-                                      totallength,
-                                      qptr+1,
-                                      qend);
-          matchlengththisline += additionalmatchlengththisline;
+					if ((subjectposthisline + matchlength) < totallength)
+					{
+						unsigned long additionalmatchlengththisline =\
+																		lcp(encseq,
+																				subjectposthisline + matchlength,
+																				totallength,
+																				qptr+1,
+																				qend);
+						matchlengththisline = matchlength + additionalmatchlengththisline;
+					}
+					else if ((subjectposthisline + matchlength) == totallength)
+					{
+						matchlengththisline = matchlength;
+					} 
 
           /*
            * print the result
