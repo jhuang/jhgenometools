@@ -341,8 +341,10 @@ static void matchposinsinglesequence(uint64_t unitnum,
   {
 		gt_pck_bitparallelism(query,
 													querylen,
-													(const FMindex *)matchprocessinfo->packedindex,
+													matchprocessinfo->packedindex,
 													matchprocessinfo->encseq,
+													(const Mbtab **)matchprocessinfo->mbtab,
+													matchprocessinfo->maxdepth,
 													matchprocessinfo->totallength,
 													(matchprocessinfo->leastlength).valueunsignedlong,
 													//findmatchfunction,
@@ -359,8 +361,10 @@ static void matchposinsinglesequence(uint64_t unitnum,
 	{
 		gt_pck_bitparallelism_bittab(query,
 																querylen,
-																(const FMindex *)matchprocessinfo->packedindex,
+																matchprocessinfo->packedindex,
 																matchprocessinfo->encseq,
+																(const Mbtab **)matchprocessinfo->mbtab,
+																matchprocessinfo->maxdepth,
 																matchprocessinfo->totallength,
 																(matchprocessinfo->leastlength).valueunsignedlong,
 																//findmatchfunction,
@@ -375,7 +379,7 @@ static void matchposinsinglesequence(uint64_t unitnum,
 																err);			
 	}
 	else
-	{    
+	{ 
 		const GtUchar *qptr;
     unsigned long remaining;
 		/* take every suffix of query, qptr is a alias name of qstart */
@@ -390,7 +394,7 @@ static void matchposinsinglesequence(uint64_t unitnum,
 			{
 				continue;
 			};
-		}
+		}	   
   }
 																				
   if (matchprocessinfo->matchmode == GT_MATCHMODE_MUM)

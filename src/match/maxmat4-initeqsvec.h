@@ -23,6 +23,7 @@
 void gt_maxmat4_initeqsvectorrev(GtBittab **C,
                       unsigned long eqslen,
                       unsigned long bitlen,
+                      unsigned long leastlength,
                       const GtUchar *pattern,
                       unsigned long patternlength);
 

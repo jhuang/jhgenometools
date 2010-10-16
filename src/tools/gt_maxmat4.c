@@ -197,8 +197,6 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
   gt_option_exclude(option_mum, option_maxmatch);
   gt_option_exclude(option_mumreference, option_maxmatch);
   gt_option_exclude(option_b, option_r);
-  gt_option_exclude(option_p, option_bit);
-  gt_option_exclude(option_p, option_bittab);
   gt_option_exclude(option_bit, option_bittab);
 
   /* set minimal arugments */

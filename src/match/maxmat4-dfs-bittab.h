@@ -38,16 +38,15 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 																	const Mbtab **mbtab,
                                   unsigned int maxdepth,
 																	unsigned long totallength,
-																	GT_UNUSED unsigned long leastlength,
-																	//Findmatchfunction findmatchfunction,
-																	GT_UNUSED const GtMatchmode matchmode,
-																	GT_UNUSED Processmatchfunction processmatch,
-																	GT_UNUSED Showspecinfo *showspecinfo,
+																	unsigned long leastlength,
+																	const GtMatchmode matchmode,
+																	Processmatchfunction processmatch,
+																	Showspecinfo *showspecinfo,
 																	unsigned long bitlength,
 																	bool showbitparallelismfactor,
 																	bool showtime,
 																	GtProgressTimer *timer,
 																	GT_UNUSED GtLogger *logger,
-																	GT_UNUSED GtError *err);
+																	GtError *err);
 
 #endif

@@ -16,7 +16,6 @@
 
 #include <stdio.h>
 
-//#include "core/chardef.h"
 #include "core/log_api.h"
 #include "core/logger.h"
 #include "core/stack-inlined.h"
@@ -73,7 +72,6 @@ static unsigned long lcp(const GtEncseq *encseq,
   {
     qptr++;
     dbrightbound++;
-    /* gt_assert(dbrightbound < totallength); */
     if (dbrightbound < totallength) 
     {
 			dbrightboundchar = gt_encseq_get_encoded_char(encseq,
@@ -86,78 +84,72 @@ static unsigned long lcp(const GtEncseq *encseq,
                             
 int gt_pck_bitparallelism(const GtUchar *query,
                           unsigned long querylen,
-                          const FMindex *index,
-                          const GtEncseq *encseq,
+													const BWTSeq *bwtSeq,
+													const GtEncseq *encseq,
+													const Mbtab **mbtab,
+													unsigned int maxdepth, 
                           unsigned long totallength,
-                          GT_UNUSED unsigned long leastlength,
-                          //Findmatchfunction findmatchfunction,
-                          GT_UNUSED const GtMatchmode matchmode,
-                          GT_UNUSED Processmatchfunction processmatch,
-                          GT_UNUSED Showspecinfo *showspecinfo,
+                          unsigned long leastlength,
+                          const GtMatchmode matchmode,
+                          Processmatchfunction processmatch,
+                          Showspecinfo *showspecinfo,
                           bool showbitparallelismfactor,
                           bool showtime,
                           GtProgressTimer *timer,
                           GT_UNUSED GtLogger *logger,
-                          GT_UNUSED GtError *err)
+                          GtError *err)
 {
   int had_err = 0;
   GtStackMaxmat4Node stack;
   Maxmat4Node root, current, child;
-  Mbtab *tmpmbtab;
-  unsigned long *rangeOccs;
+
   unsigned long resize = 64UL; 
-  unsigned long /*maxdepth,*/ rangesize, idx;
-  
+  unsigned long rangesize, idx;  
   unsigned long offset = 0UL;
-  unsigned long bitlen = (unsigned long) (CHAR_BIT * sizeof (unsigned long));
+  unsigned long i;   
     
   GtUchar alphasize;
   unsigned int numofchars;
   numofchars = gt_alphabet_num_of_chars(gt_encseq_alphabet(encseq));
   alphasize = (GtUchar) numofchars;
   
+  GtUchar cc;
+  Symbol curSym;
+  const MRAEnc *alphabet;
+  struct GtUlongPair seqpospair;
+  gt_assert(bwtSeq);
+  const FMindex *fmindex = (const FMindex *)bwtSeq;
+  alphabet = BWTSeqGetAlphabet(bwtSeq); 
+  const Mbtab *mbptr; 
+  struct matchBound bwtbound;	    
+  unsigned long *rangeOccs;
   rangeOccs = gt_calloc((size_t) GT_MULT2(alphasize), sizeof (*rangeOccs));
-  tmpmbtab = gt_calloc((size_t) (alphasize + 3), sizeof (*tmpmbtab ));
     
-  unsigned long i;  
-	//GtBittab **eqsvector;
-	//eqsvector = gt_malloc(sizeof (GtBittab*) * alphasize);
-	//for (i = 0; i < alphasize; i++) {
-		//eqsvector[(GtUchar)i] = gt_bittab_new(BIT_LENGTH);
-	//}
-
 	unsigned long *eqsvector;
 	eqsvector = gt_calloc(alphasize, sizeof (*eqsvector));
+	GtBitsequence mask;
 	
-	double offsettimes = 0.0;
+  unsigned long realcalcquerypos=0, realcalcnodes=0, offsettimes=0;
+  unsigned long moveunits;   
      
   while (offset < querylen) 
   {
 		offsettimes++;
 		//printf("------offset=%lu\n",offset);
 		/* initialize the position of most left query of boundary matches */
-		unsigned long mostleftquerypos = offset + bitlen - leastlength + 1;
-		/* in last round or querylen < BIT_LENGTH */
-		bool islastround = (querylen-offset <= bitlen);
+		moveunits = offset + GT_INTWORDSIZE - leastlength + 1;
+		/* in last round */
+		bool islastround = (querylen-offset <= GT_INTWORDSIZE);
 		
-		//if (islastround)
-		//{  
-			//gt_maxmat4_initeqsvectorrev(eqsvector,alphasize,bitlen,query+offset,querylen-offset);
-		//} 
-		//else
-		//{
-			//gt_maxmat4_initeqsvectorrev(eqsvector,alphasize,bitlen,query+offset,bitlen);  			
-		//}			
-
 		if (islastround)
 		{
 			gt_initeqsvectorrev(eqsvector,(unsigned long) alphasize,
-										query+offset,querylen-offset);  /* why is rev-version used here? */
+										query+offset,querylen-offset); 
 		} 
 		else
 		{
 			gt_initeqsvectorrev(eqsvector,(unsigned long) alphasize,
-										query+offset,bitlen);  			
+										query+offset,GT_INTWORDSIZE);  			
 		}			
 		
 		GT_STACK_INIT(&stack, resize);
@@ -165,13 +157,8 @@ int gt_pck_bitparallelism(const GtUchar *query,
 		root.depth = 0;
 		root.lower = 0;
 		root.upper = totallength + 1;
-		//GtBittab *rootprefixofsuffixbits = gt_bittab_new(bitlen);
-		//long position;
-		//for (position = 0; position < BIT_LENGTH; position++) {
-			//gt_bittab_set_bit(rootprefixofsuffixbits, position);
-		//}  /* init all positions as 1 */
-		//root.prefixofsuffixbits = rootprefixofsuffixbits;
 		root.prefixofsuffixbits = ~0UL;
+		root.code = 0;
 		GT_STACK_PUSH(&stack,root);
 
 		if (showtime)
@@ -180,17 +167,18 @@ int gt_pck_bitparallelism(const GtUchar *query,
 																				"start to traverse tree",
 																				stdout);
 		}
-    
-    //if (matchmode == GT_MATCHMODE_MAXMATCH) 
-		//{
-			while (!GT_STACK_ISEMPTY(&stack))
-			{
-				current = GT_STACK_POP(&stack);
-				gt_assert(current.lower < current.upper);
-				
-				/* find nodes whose depth is equal than least length as seeds */
-				if (current.depth == leastlength) 
-				{
+    		
+		while (!GT_STACK_ISEMPTY(&stack))
+		{
+			current = GT_STACK_POP(&stack);
+			gt_assert(current.lower < current.upper);
+			
+			/* find nodes whose depth is equal than least length as seeds */
+			if (current.depth == leastlength)
+			{			
+				realcalcnodes++;
+			  if (matchmode == GT_MATCHMODE_MAXMATCH) 
+			  {
 					/* save all subject positions in an array */
 					const unsigned long subjectpositions_size = current.upper - current.lower;
 					unsigned long subjectpositions[subjectpositions_size];
@@ -199,28 +187,24 @@ int gt_pck_bitparallelism(const GtUchar *query,
 					for (bwtboundthisline=current.lower, i=0;bwtboundthisline < current.upper; bwtboundthisline++, i++)
 					{					
 							unsigned long subjectposthisline =
-							gt_voidpackedfindfirstmatchconvert(index,
+							gt_voidpackedfindfirstmatchconvert(fmindex,
 																								 bwtboundthisline,
 																								 current.depth);
 							subjectpositions[i] = subjectposthisline;
 					}					
 
-					//for (i=0; i<BIT_LENGTH; i++)
-					//{
-						///* for every query position */	
-						//if (gt_bittab_bit_is_set(current.prefixofsuffixbits, i)) 
-						//{	
-					GtBitsequence mask;
+					/* for every query position */	
 					for (i=0, mask = GT_FIRSTBIT;
 							 i < (unsigned int) GT_INTWORDSIZE;
 							 i++, mask >>= 1)
 					{
 						if (current.prefixofsuffixbits & mask) 
-						{
+						{				
+							realcalcquerypos++;								
 							unsigned long querypos;	
 							if (islastround)
 							{
-								querypos = querylen - (bitlen-i);
+								querypos = querylen - (GT_INTWORDSIZE-i);
 							} 
 							else
 							{
@@ -232,14 +216,27 @@ int gt_pck_bitparallelism(const GtUchar *query,
 							for(j=0; j<subjectpositions_size; j++)
 							{
 								if ( isleftmaximal(encseq,subjectpositions[j],query,query+querypos) ) {
-									unsigned long additionalmatchlength = 
-																lcp(encseq,
-																		subjectpositions[j] + current.depth,
-																		totallength,
-																		query+querypos+current.depth,
-																		//query+offset+bitlen);  /* qrightbound */
-																		query+querylen);         /* qend */								
-									unsigned long matchlength = current.depth + additionalmatchlength;	
+									unsigned long matchlength;
+									if ((subjectpositions[j] + current.depth) < totallength)
+									{
+										unsigned long additionalmatchlength = 
+																	lcp(encseq,
+																			subjectpositions[j] + current.depth,
+																			totallength,
+																			query + querypos + current.depth,
+																			query+querylen);         /* qend */								
+										matchlength = current.depth + additionalmatchlength;	
+									}
+									else if ((subjectpositions[j] + current.depth) == totallength)
+									{
+										matchlength = current.depth;
+									} 
+									else
+									{
+										gt_error_set(err, "The subject position plus current.depth exceeds totallength.");
+										had_err = true;
+										break;
+									}
 
 									/*
 									 * print or save the result
@@ -252,53 +249,122 @@ int gt_pck_bitparallelism(const GtUchar *query,
 															 subjectpositions[j],
 															 showspecinfo);	
 								}
-							}
+							}																																							
 						}
-					}														
-				}
-				
-				/* fill data in tmpmbtab from different current.lower and current.upper */
-				rangesize = gt_bwtrangesplitallwithoutspecial(tmpmbtab,
-																											rangeOccs,
-																											index,
-																											current.lower,
-																											current.upper);
-				gt_assert(rangesize <= alphasize);
-							
-				for (idx = 0; idx < rangesize; idx++)
-				{    
-					gt_assert (tmpmbtab[idx].lowerbound <= tmpmbtab[idx].upperbound);
-					
-					/* only the nodes that has child is allowed to enter */
-					if ( (tmpmbtab[idx].lowerbound != tmpmbtab[idx].upperbound) )  /* in reference with idx is extensible */
-					{  
-						if (current.depth < leastlength) 
-						{
-							/* tmpmbtab[idx] is a branch of current node, 
-							 * that is, tmpmbtab[idx] can be the only child of current node
-							 * or one of children of current onde */           
-							if (current.depth > 0UL)
+					}
+				} 
+	      else  /* MUM or MUMREFERENCE */
+	      {					
+					/* for every query position */	
+					for (i=0, mask = GT_FIRSTBIT;
+							 i < (unsigned int) GT_INTWORDSIZE;
+							 i++, mask >>= 1)
+					{
+						if (current.prefixofsuffixbits & mask) 
+						{				
+							realcalcquerypos++;								
+							unsigned long querypos;	
+							if (islastround)
 							{
-								child.prefixofsuffixbits
-									= current.prefixofsuffixbits &
-										(eqsvector[(GtUchar)idx] << current.depth);
-							} else
+								querypos = querylen - (GT_INTWORDSIZE-i);
+							} 
+							else
 							{
-								child.prefixofsuffixbits = eqsvector[(GtUchar)idx];
+								querypos = offset + i;
 							}
 							
-							if (child.prefixofsuffixbits != 0) {		
-								child.lower = tmpmbtab[idx].lowerbound;  /* record match position in reference */
-								child.upper = tmpmbtab[idx].upperbound;		
-								child.depth = current.depth + 1;  			 /* record match length */
-								GT_STACK_PUSH(&stack,child);						 /*	record match position in query */		
-							}										
+							bwtbound.start = current.lower;
+							bwtbound.end = current.upper;
+							unsigned long depth = current.depth;
+
+							while ( (querypos+depth) < querylen && (bwtbound.start+1) < bwtbound.end )
+							{
+								cc = *(query+querypos+depth);
+								curSym = MRAEncMapSymbol(alphabet, cc);
+								seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
+																												 bwtbound.start,bwtbound.end);
+								bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
+								bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;		
+								depth++;	
+							}
+
+							/* calculate match length of every combination between subjectpos and querypos */
+							if (bwtbound.start+1 == bwtbound.end) {
+								unsigned long subjectpos =
+								gt_voidpackedfindfirstmatchconvert(fmindex,
+																									 bwtbound.start,
+																									 depth);
+								if ( isleftmaximal(encseq,subjectpos,query,query+querypos) ) {
+									unsigned long additionalmatchlength = 
+																lcp(encseq,
+																		subjectpos + depth,
+																		totallength,
+																		query + querypos + depth,
+																		query + querylen);         /* qend */								
+									unsigned long matchlength = depth + additionalmatchlength;	
+									
+									/*
+									 * print or save the result
+									 */
+									processmatch(encseq,
+															 query,
+															 querypos, 
+															 querylen,
+															 matchlength,
+															 subjectpos,
+															 showspecinfo);	
+								}
+							}																																						
 						}
-				
 					}
 				}
 			}
-	  //}
+			else if (current.depth < leastlength) 
+			{				
+				/* fill data in tmpmbtab from different current.lower and current.upper */
+				rangesize
+					= MRAEncGetRangeSize(EISGetAlphabet(bwtSeq->seqIdx),0);																							
+				gt_assert(rangesize <= alphasize);									
+				BWTSeqPosPairRangeOcc(bwtSeq, 0, current.lower, current.upper,rangeOccs);		
+				
+				for (idx = 0; idx < rangesize; idx++)
+				{  
+					if ((current.depth+1) <= maxdepth)
+					{		   			   
+						child.code = current.code * alphasize + idx;	
+						mbptr = mbtab[current.depth+1] + child.code;	
+						bwtbound.start = mbptr->lowerbound;
+						bwtbound.end = mbptr->upperbound;
+					}
+					else
+					{								
+						bwtbound.start = bwtSeq->count[idx] + rangeOccs[idx];
+						bwtbound.end = bwtSeq->count[idx] + rangeOccs[rangesize+idx];
+					}
+										
+					/* in reference with idx is extensible */
+					if (bwtbound.start < bwtbound.end)  
+					{  
+						if (current.depth > 0UL)
+						{
+							child.prefixofsuffixbits
+								= current.prefixofsuffixbits &
+									(eqsvector[(GtUchar)idx] << current.depth);
+						} else
+						{
+							child.prefixofsuffixbits = eqsvector[(GtUchar)idx];
+						}
+						
+						if (child.prefixofsuffixbits != 0) {		
+							child.lower = bwtbound.start;  /* record match position in reference */
+							child.upper = bwtbound.end;	
+							child.depth = current.depth + 1;  			 /* record match length */							
+							GT_STACK_PUSH(&stack,child);						 /*	record match position in query */		
+						}													
+					}
+				}
+			}
+		}  
 	  							
 		if (islastround)
 		{
@@ -306,19 +372,17 @@ int gt_pck_bitparallelism(const GtUchar *query,
 		} 
 		else
 		{
-			offset = mostleftquerypos;						
+			offset = moveunits;						
 		}
 	}
 	
 	if (showbitparallelismfactor && querylen!=0)
 	{
-		printf("# BIT PARALLELISM FACTOR=%3.2lf\n",(offsettimes+1)/querylen);
-	}
+		printf("# BIT PARALLELISM FACTOR=%3.2lf, nodes/move=%3.2lf, real calculated query positions=%lu, real calculated nodes=%lu\n",(double)realcalcquerypos/querylen, (double)realcalcnodes/(offsettimes+1), realcalcquerypos, realcalcnodes);
+	}	
 
-  // gt_logger_log(logger, "max stack depth = %lu", maxdepth);
   GT_STACK_DELETE(&stack);
   gt_free(rangeOccs);
-  gt_free(tmpmbtab);
   
   gt_free(eqsvector);
   return had_err;

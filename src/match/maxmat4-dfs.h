@@ -18,25 +18,28 @@
 #define MAXMAT4_DFS_H
 
 #include "core/stack-inlined.h"
-#include "match/eis-voiditf.h"
+//#include "match/eis-voiditf.h"
+#include "match/eis-bwtseq.h"
 #include "core/bittab_api.h"
 
 typedef struct {
   unsigned long depth,
                   prefixofsuffixbits,
                   lower,
-                  upper;  
+                  upper; 
+  GtCodetype code;                    
 } Maxmat4Node;
 
 GT_STACK_DECLARESTRUCT(Maxmat4Node, 256UL);
 
 int gt_pck_bitparallelism(const GtUchar *query,
                           unsigned long querylen,
-                          const FMindex *index,
-                          const GtEncseq *encseq,
+													const BWTSeq *bwtSeq,
+													const GtEncseq *encseq,
+													const Mbtab **mbtab,
+													unsigned int maxdepth, 
                           unsigned long totallength,
                           unsigned long leastlength,
-                          //Findmatchfunction findmatchfunction,
                           const GtMatchmode matchmode,
                           Processmatchfunction processmatch,
                           Showspecinfo *showspecinfo,
@@ -44,6 +47,6 @@ int gt_pck_bitparallelism(const GtUchar *query,
                           bool showtime,
                           GtProgressTimer *timer,
                           GtLogger *logger,
-                          GT_UNUSED GtError *err);
+                          GtError *err);
 
 #endif
