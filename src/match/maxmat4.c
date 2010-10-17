@@ -95,7 +95,7 @@ static void showquerydesc(GT_UNUSED uint64_t unitnum,
     }
     else
     {
-			/* first line is query sequence */
+      /* first line is query sequence */
       if (showspecinfo->queryreadmode==GT_READMODE_FORWARD)
       {
         printf("> %s",querydesc);
@@ -318,7 +318,7 @@ static void matchposinsinglesequence(uint64_t unitnum,
                                       const GtUchar *query,
                                       unsigned long querylen,
                                       const char *querydesc,
-                                      GT_UNUSED Findmatchfunction findmatchfunction,
+                                      Findmatchfunction findmatchfunction,
                                       Processmatchfunction processmatch,
                                       Matchprocessinfo *matchprocessinfo,
                                       bool bitparallelism,
@@ -329,7 +329,7 @@ static void matchposinsinglesequence(uint64_t unitnum,
                                       GT_UNUSED GtProgressTimer *timer,
                                       GT_UNUSED GtLogger *logger,
                                       GtError *err)
-{  
+{
   /* for every query, show its description at the beginning */
   showquerydesc(unitnum,
                 querylen,
@@ -337,66 +337,65 @@ static void matchposinsinglesequence(uint64_t unitnum,
                 matchprocessinfo->showspecinfo,
                 err);
 
-	if (bitparallelism)
+  if (bitparallelism)
   {
-		gt_pck_bitparallelism(query,
-													querylen,
-													matchprocessinfo->packedindex,
-													matchprocessinfo->encseq,
-													(const Mbtab **)matchprocessinfo->mbtab,
-													matchprocessinfo->maxdepth,
-													matchprocessinfo->totallength,
-													(matchprocessinfo->leastlength).valueunsignedlong,
-													//findmatchfunction,
-													matchprocessinfo->matchmode,
-													processmatch,
-													matchprocessinfo->showspecinfo,
-													showbitparallelismfactor,
-													showtime,
-													timer,
-													logger,
-													err);		
-	}
-	else if (bitparallelismwithbittab)
-	{
-		gt_pck_bitparallelism_bittab(query,
-																querylen,
-																matchprocessinfo->packedindex,
-																matchprocessinfo->encseq,
-																(const Mbtab **)matchprocessinfo->mbtab,
-																matchprocessinfo->maxdepth,
-																matchprocessinfo->totallength,
-																(matchprocessinfo->leastlength).valueunsignedlong,
-																//findmatchfunction,
-																matchprocessinfo->matchmode,
-																processmatch,
-																matchprocessinfo->showspecinfo,
-																bitlength.valueunsignedlong,
-																showbitparallelismfactor,
-																showtime,
-																timer,
-																logger,
-																err);			
-	}
-	else
-	{ 
-		const GtUchar *qptr;
-    unsigned long remaining;
-		/* take every suffix of query, qptr is a alias name of qstart */
-		for (qptr = query, remaining = querylen; remaining > 0; qptr++, remaining--)
-		{
-			if ( !findmatchfunction(
-										 query,           /* absolute query start position */
-										 qptr,            /* variable position in query */
-										 query+querylen,  /* absolute query end position */
-										 processmatch,
-										 matchprocessinfo) )    /* attention: no GtError further given */
-			{
-				continue;
-			};
-		}	   
+    gt_pck_bitparallelism(query,
+                          querylen,
+                          matchprocessinfo->packedindex,
+                          matchprocessinfo->encseq,
+                          (const Mbtab **)matchprocessinfo->mbtab,
+                          matchprocessinfo->maxdepth,
+                          matchprocessinfo->totallength,
+                          (matchprocessinfo->leastlength).valueunsignedlong,
+                          matchprocessinfo->matchmode,
+                          processmatch,
+                          matchprocessinfo->showspecinfo,
+                          showbitparallelismfactor,
+                          showtime,
+                          timer,
+                          logger,
+                          err);
   }
-																				
+  else if (bitparallelismwithbittab)
+  {
+    gt_pck_bitparallelism_bittab(query,
+                          querylen,
+                          matchprocessinfo->packedindex,
+                          matchprocessinfo->encseq,
+                          (const Mbtab **)matchprocessinfo->mbtab,
+                          matchprocessinfo->maxdepth,
+                          matchprocessinfo->totallength,
+                          (matchprocessinfo->leastlength).valueunsignedlong,
+                          matchprocessinfo->matchmode,
+                          processmatch,
+                          matchprocessinfo->showspecinfo,
+                          bitlength.valueunsignedlong,
+                          showbitparallelismfactor,
+                          showtime,
+                          timer,
+                          logger,
+                          err);
+  }
+  else
+  {
+    const GtUchar *qptr;
+    unsigned long remaining;
+    /* take every suffix of query, qptr is a alias name of qstart */
+    for (qptr = query, remaining = querylen; remaining > 0; qptr++, remaining--)
+    {
+      /* attention: no GtError further given */
+      if ( !findmatchfunction(
+                     query,           /* absolute query start position */
+                     qptr,            /* variable position in query */
+                     query+querylen,  /* absolute query end position */
+                     processmatch,
+                     matchprocessinfo) )
+      {
+        continue;
+      };
+    }
+  }
+
   if (matchprocessinfo->matchmode == GT_MATCHMODE_MUM)
   {
       mumuniqueinquery(matchprocessinfo,
@@ -405,7 +404,7 @@ static void matchposinsinglesequence(uint64_t unitnum,
                       err);
       gt_array_reset(matchprocessinfo->showspecinfo->mumcandtab);
   }
-    
+
 }
 
 int gt_findmum(const GtEncseq *encseq,
@@ -426,7 +425,7 @@ int gt_findmum(const GtEncseq *encseq,
                 bool prebwt,
                 bool bitparallelism,
                 bool bitparallelismwithbittab,
-                Definedunsignedlong bitlength,   
+                Definedunsignedlong bitlength,
                 bool showbitparallelismfactor,
                 bool showtime,
                 GtProgressTimer *timer,
@@ -520,7 +519,7 @@ int gt_findmum(const GtEncseq *encseq,
                                  &matchprocessinfo,
                                  bitparallelism,
                                  bitparallelismwithbittab,
-                                 bitlength, 
+                                 bitlength,
                                  showbitparallelismfactor,
                                  showtime,
                                  timer,
@@ -560,7 +559,7 @@ int gt_findmum(const GtEncseq *encseq,
                                  &matchprocessinfo,
                                  bitparallelism,
                                  bitparallelismwithbittab,
-                                 bitlength, 
+                                 bitlength,
                                  showbitparallelismfactor,
                                  showtime,
                                  timer,

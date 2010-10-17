@@ -36,7 +36,7 @@ typedef struct {
        showsequencelengths,                  /* showsequencelengths */
        prebwt,
        bitparallelism,
-       bitparallelismwithbittab,      
+       bitparallelismwithbittab,
        showbitparallelismfactor,
        showtime;
   Definedunsignedlong leastlength,           /* leastlength */
@@ -64,8 +64,9 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
 {
   GtMaxmat4Arguments *arguments = (GtMaxmat4Arguments*)tool_arguments;
   GtOption *option_mum, *option_mumreference, *option_maxmatch, *option_l,
-           *option_b, *option_r, *option_s, *option_c, *option_F, *option_L, 
-           *option_p, *option_bit, *option_bittab, *option_bitlen, *option_f, *option_showtime;
+           *option_b, *option_r, *option_s, *option_c, *option_F, *option_L,
+           *option_p, *option_bit, *option_bittab, *option_bitlen, *option_f,
+           *option_showtime;
   GtOptionParser *op;
 
   gt_assert(arguments);
@@ -146,7 +147,7 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
       "show the length of the query sequence on the header line",
       &arguments->showsequencelengths, false);
   gt_option_parser_add_option(op, option_L);
-  
+
   /* -p for prebwt */
   option_p = gt_option_new_bool("p",
       "use precomputed bwt-bounds files (file type: pbt), which can "
@@ -154,19 +155,19 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
       "will be computed automatically in normal process",
       &arguments->prebwt, false);
   gt_option_parser_add_option(op, option_p);
-  
+
   /* -bit for bitparallelism */
   option_bit = gt_option_new_bool("bit",
       "use bit parallelism",
       &arguments->bitparallelism, false);
   gt_option_parser_add_option(op, option_bit);
- 
+
   /* -bittab for bitparallelism with bittab */
   option_bittab = gt_option_new_bool("bittab",
       "use bit parallelism with bittab",
       &arguments->bitparallelismwithbittab, false);
   gt_option_parser_add_option(op, option_bittab);
-  
+
   /* -bitlen for bittab length */
   option_bitlen = gt_option_new_ulong_min("bitlen",
       "set custom length of bittab for option bittab "
@@ -174,13 +175,14 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
       &arguments->bitlength.valueunsignedlong,
       (unsigned long)32,(unsigned long) 1);
   gt_option_parser_add_option(op, option_bitlen);
-  
+
   /* -f for showbitparallelismfactor */
   option_f = gt_option_new_bool("f",
-      "show bit parallelism factor for every query, that is， 1/average offset",
+      "show bit parallelism factor for every query, \
+      that is， 1/average offset",
       &arguments->showbitparallelismfactor, false);
   gt_option_parser_add_option(op, option_f);
-     
+
   /* -showtime for showtime */
   option_showtime = gt_option_new_bool("showtime",
       "show the progress time",
@@ -233,25 +235,26 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   const GtAlphabet *alphabet = NULL;
   unsigned long totallength;
   unsigned int mappedbits;
-  
+
   void *packedindex = NULL;
   const Mbtab **mbtab = NULL;
   unsigned int maxdepth = 0;
-  
+
   GtStr *referencefile = NULL;
   GtStrArray *queryfiles = NULL;
-  
-  GtProgressTimer *maxmat4progress = NULL;  
+
+  GtProgressTimer *maxmat4progress = NULL;
   if (gt_showtime_enabled() || arguments->showtime)
   {
-    maxmat4progress = gt_progress_timer_new("finding maximal matches of some minimum length "
-                                        "between a reference sequence and a query-sequence");
+    maxmat4progress = \
+    gt_progress_timer_new("finding maximal matches of some minimum length "
+                       "between a reference sequence and a query-sequence");
   }
-  
+
   /* init the referencefile and queryfiles */
   referencefile = gt_str_new_cstr(argv[arg]);
   queryfiles = gt_str_array_new();
-  
+
   int idx;
   for (idx=arg+1; idx<argc; idx++)
   {
@@ -263,10 +266,12 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   gt_assert(tool_arguments);
   logger = gt_logger_new(false, GT_LOGGER_DEFLT_PREFIX, stdout);
   mappedbits = SARR_ESQTAB|SARR_SSPTAB|SARR_DESTAB|SARR_SDSTAB;
-  //if (arguments->prebwt) 
-  //{ 
-     //mappedbits |= SARR_PBTTAB;
-  //}
+  /*
+  if (arguments->prebwt)
+  {
+     mappedbits |= SARR_PBTTAB;
+  }
+  */
 
   /*
    * map suffixarray from referencefile, a referencefile contains maybe many
@@ -278,7 +283,7 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
                         logger,
                         err) != 0)
   {
-		gt_assert(!haserr);
+    gt_assert(!haserr);
     /* gt_error_set(err, "error in reading reference file"); */
     haserr = true;
     totallength = 0;
@@ -292,20 +297,20 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   {
     /* load packed index from suffxiarray */
     packedindex = gt_loadvoidBWTSeqForSA(gt_str_get(referencefile),
-                                         alphabet,
-                                         totallength,
-                                         arguments->prebwt,  /* bool withpckbwt */
-                                         err);
+                                       alphabet,
+                                       totallength,
+                                       arguments->prebwt,  /* bool withpckbwt */
+                                       err);
     if (packedindex == NULL)
     {
       haserr = true;
     }
 
-    if (arguments->prebwt) 
-    { 
+    if (arguments->prebwt)
+    {
       mbtab = gt_bwtseq2mbtab(packedindex);
       maxdepth = gt_bwtseq2maxdepth(packedindex);
-		}
+    }
   }
 
   if (!haserr)
@@ -326,9 +331,9 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
     }
 
     if (gt_findmum(suffixarray.encseq,
-                   packedindex, 
-                   /* if option prebwt is false -> mbtab is NULL and maxdepth is 0,
-                    * but it doesn't matter because the both parameters 
+                   packedindex,
+                   /* if option prebwt is false -> mbtab is NULL and maxdepth
+                    * is 0, but it doesn't matter because the both parameters
                     * won't be used later in this case */
                    mbtab,
                    maxdepth,
@@ -346,19 +351,12 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
                    arguments->prebwt,
                    arguments->bitparallelism,
                    arguments->bitparallelismwithbittab,
-                   arguments->bitlength,   
+                   arguments->bitlength,
                    arguments->showbitparallelismfactor,
                    arguments->showtime,
                    maxmat4progress,
                    logger,
                    err) != 0)
-    //gt_pck_bitparallelism((const FMindex *)packedindex,
-                            //suffixarray.encseq,
-                            //gt_alphabet_num_of_chars(gt_encseq_alphabet(suffixarray.encseq)),
-                            //totallength,
-                            //maxmat4progress,
-                            //logger,
-                            //err);
     {
       haserr = true;
     }
@@ -368,19 +366,12 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   {
     gt_deletevoidBWTSeq(packedindex);
   }
-  if (arguments->prebwt)
-  {
-		//////gt_free(mbtab[0]);
-    //////mbtab[0] = NULL;
-    //gt_free(mbtab);
-    ////mbtab = NULL;
-	}
   gt_freesuffixarray(&suffixarray);
 
   gt_logger_delete(logger);
   gt_str_delete(referencefile);
   gt_str_array_delete(queryfiles);
-  
+
   if (maxmat4progress != NULL)
   {
     gt_progress_timer_start_new_state(maxmat4progress,NULL,stdout);
