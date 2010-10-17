@@ -517,11 +517,13 @@ unsigned long gt_packedindexmstatsforward(const BWTSeq *bwtseq,
                                        unsigned long *witnessposition,
                                        const GtUchar *qstart,
                                        const GtUchar *qend);
-                                       
-//typedef struct
-//{
-  //unsigned long lowerbound, upperbound;
-//} Mbtab;
+
+/*
+typedef struct
+{
+  unsigned long lowerbound, upperbound;
+} Mbtab;
+*/
 
 /**
  * @brief for packed index (given as void pointer), compute MUM-candidate
@@ -554,7 +556,7 @@ bool gt_packedindexmumcandidates(const BWTSeq *bwtSeq,
  * @brief the same function as last, only using prebwt
  * @param mabtab: contains lowerbound and upperbound, relevant for BWTSeq
  * @param maxdepth: maximaldepth of boundaries
- */       
+ */
 bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
                                  const Mbtab **mbtab,
                                  unsigned int maxdepth,
@@ -566,7 +568,7 @@ bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
                                  const GtUchar *qend,
                                  Processmatchfunction processmatch,
                                  Showspecinfo *showspecinfo);
-                                 
+
 /**
  * @brief for packed index (given as void pointer), compute all maximal
  * matches in range between qstart and qend. The maximal matches must
@@ -599,7 +601,7 @@ bool gt_packedindexmaxmatches(const BWTSeq *bwtSeq,
  * @brief the same function as last, only using prebwt
  * @param mabtab: contains lowerbound and upperbound, relevant for BWTSeq
  * @param maxdepth: maximaldepth of boundaries
- */                              
+ */
 bool gt_packedindexmaxmatchesusingprebwt(const BWTSeq *bwtSeq,
                               const Mbtab **mbtab,
                               unsigned int maxdepth,

@@ -120,10 +120,12 @@ unsigned long gt_voidpackedfindfirstmatchconvert(const FMindex *fmindex,
                                                  unsigned long witnessbound,
                                                  unsigned long matchlength);
 
-//typedef struct
-//{
-  //unsigned long lowerbound, upperbound;
-//} Mbtab;
+/*
+typedef struct
+{
+  unsigned long lowerbound, upperbound;
+} Mbtab;
+*/
 
 unsigned long gt_bwtrangesplitallwithoutspecial(Mbtab *mbtab,
                                                 unsigned long *rangeOccs,
