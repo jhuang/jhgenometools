@@ -34,13 +34,13 @@ void gt_maxmat4_initeqsvectorrev(GtBittab **C,
     gt_bittab_unset(C[i*leastlength]);
   }
 
-  for (position = patternlength-1; position >= 0; position--) {
+  for (position = (long)patternlength-1; position >= 0; position--) {
     pptr = pattern+position;
     gt_assert(*pptr != (GtUchar) SEPARATOR);
     if (*pptr != (GtUchar) WILDCARD)
     {
       gt_bittab_set_bit(C[(unsigned long) (*pptr)*leastlength],
-                              position + bitlen - patternlength);
+                              (unsigned long)position + bitlen - patternlength);
     }
   }
 }

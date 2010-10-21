@@ -737,7 +737,7 @@ bool gt_packedindexmumcandidates(const BWTSeq *bwtSeq,
   Symbol curSym;
   unsigned long subjectpos, matchlength = 0, additionalmatchlength;
   const MRAEnc *alphabet;
-  
+
   gt_assert(bwtSeq && qstart);
   alphabet = BWTSeqGetAlphabet(bwtSeq);
   qptr = qstart;

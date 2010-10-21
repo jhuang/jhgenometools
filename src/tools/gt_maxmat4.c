@@ -15,14 +15,13 @@
 */
 
 #include "match/maxmat4.h"
-#include "match/esa-map.h"
-#include "match/eis-voiditf.h"
 #include "match/matchmode_api.h"
 #include "tools/gt_maxmat4.h"
 #include "core/progress_timer_api.h"
 #include "core/showtime.h"
 
-#include "match/maxmat4-dfs.h"
+#include "match/esa-map.h"
+#include "match/eis-voiditf.h"
 
 typedef struct {
   bool mum,
@@ -235,6 +234,7 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   const GtAlphabet *alphabet = NULL;
   unsigned long totallength;
   unsigned int mappedbits;
+  int idx;
 
   void *packedindex = NULL;
   const Mbtab **mbtab = NULL;
@@ -255,7 +255,6 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   referencefile = gt_str_new_cstr(argv[arg]);
   queryfiles = gt_str_array_new();
 
-  int idx;
   for (idx=arg+1; idx<argc; idx++)
   {
     gt_str_array_add_cstr(queryfiles, argv[idx]);

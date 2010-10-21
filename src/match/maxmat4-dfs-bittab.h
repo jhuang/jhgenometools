@@ -18,7 +18,9 @@
 #define MAXMAT4_DFS_BITTAB_H
 
 #include "core/stack-inlined.h"
+#ifndef S_SPLINT_S
 #include "match/eis-bwtseq.h"
+#endif
 #include "core/bittab_api.h"
 
 typedef struct {
@@ -31,6 +33,7 @@ typedef struct {
 
 GT_STACK_DECLARESTRUCT(Maxmat4NodeBittab, 256UL);
 
+#ifndef S_SPLINT_S
 int gt_pck_bitparallelism_bittab(const GtUchar *query,
                                   unsigned long querylen,
                                   const BWTSeq *bwtSeq,
@@ -48,5 +51,6 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
                                   GtProgressTimer *timer,
                                   GT_UNUSED GtLogger *logger,
                                   GtError *err);
+#endif
 
 #endif

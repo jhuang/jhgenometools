@@ -25,6 +25,7 @@
 #include "match/maxmat4-dfs.h"
 #include "initeqsvec.h"
 
+#ifndef S_SPLINT_S
 /** the function check if the mapped sequence is left maximal */
 static bool isleftmaximal(const GtEncseq *encseq,
                          unsigned long subjectpos,
@@ -131,7 +132,7 @@ int gt_pck_bitparallelism(const GtUchar *query,
 
   unsigned long realcalcquerypos=0, realcalcnodes=0, offsettimes=0;
   unsigned long moveunits;
-  
+
   unsigned long subjectpositions_size, bwtnumber, subjectpos;
   unsigned long querypos, matchlength, additionalmatchlength, increaseddepth;
 
@@ -204,7 +205,7 @@ int gt_pck_bitparallelism(const GtUchar *query,
           {
             if (current.prefixofsuffixbits & mask)
             {
-              realcalcquerypos++;              
+              realcalcquerypos++;
               if (islastround)
               {
                 querypos = querylen - (GT_INTWORDSIZE-i);
@@ -399,3 +400,4 @@ int gt_pck_bitparallelism(const GtUchar *query,
   gt_free(eqsvector);
   return had_err;
 }
+#endif

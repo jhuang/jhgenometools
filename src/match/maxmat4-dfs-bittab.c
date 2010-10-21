@@ -25,6 +25,7 @@
 #include "match/maxmat4-dfs-bittab.h"
 #include "maxmat4-initeqsvec.h"
 
+#ifndef S_SPLINT_S
 /** the function check if the mapped sequence is left maximal */
 static bool isleftmaximal(const GtEncseq *encseq,
                          unsigned long subjectpos,
@@ -425,3 +426,4 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
   gt_free(eqsvector);
   return had_err?-1:0;
 }
+#endif
