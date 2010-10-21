@@ -106,7 +106,7 @@ int gt_pck_bitparallelism(const GtUchar *query,
   unsigned long resize = 64UL;
   unsigned long rangesize, idx;
   unsigned long offset = 0UL;
-  unsigned long i;
+  unsigned long i, j;
 
   GtUchar alphasize;
   unsigned int numofchars;
@@ -131,6 +131,9 @@ int gt_pck_bitparallelism(const GtUchar *query,
 
   unsigned long realcalcquerypos=0, realcalcnodes=0, offsettimes=0;
   unsigned long moveunits;
+  
+  unsigned long subjectpositions_size, bwtnumber, subjectpos;
+  unsigned long querypos, matchlength, additionalmatchlength, increaseddepth;
 
   while (offset < querylen)
   {
@@ -180,20 +183,18 @@ int gt_pck_bitparallelism(const GtUchar *query,
         if (matchmode == GT_MATCHMODE_MAXMATCH)
         {
           /* save all subject positions in an array */
-          const unsigned long subjectpositions_size = \
-                                 current.upper - current.lower;
+          subjectpositions_size = current.upper - current.lower;
           unsigned long subjectpositions[subjectpositions_size];
 
-          unsigned long bwtboundthisline;
-          for (bwtboundthisline=current.lower, i=0;
-                bwtboundthisline < current.upper;
-                bwtboundthisline++, i++)
+          for (bwtnumber=current.lower, i=0;
+                bwtnumber < current.upper;
+                bwtnumber++, i++)
           {
-              unsigned long subjectposthisline =
+              subjectpos =
               gt_voidpackedfindfirstmatchconvert(fmindex,
-                                                 bwtboundthisline,
+                                                 bwtnumber,
                                                  current.depth);
-              subjectpositions[i] = subjectposthisline;
+              subjectpositions[i] = subjectpos;
           }
 
           /* for every query position */
@@ -203,8 +204,7 @@ int gt_pck_bitparallelism(const GtUchar *query,
           {
             if (current.prefixofsuffixbits & mask)
             {
-              realcalcquerypos++;
-              unsigned long querypos;
+              realcalcquerypos++;              
               if (islastround)
               {
                 querypos = querylen - (GT_INTWORDSIZE-i);
@@ -216,15 +216,13 @@ int gt_pck_bitparallelism(const GtUchar *query,
 
               /* calculate match length of every combination
                * between subjectpos and querypos */
-              unsigned long j;
               for (j=0; j<subjectpositions_size; j++)
               {
                 if ( isleftmaximal(encseq,subjectpositions[j],\
                                    query,query+querypos) ) {
-                  unsigned long matchlength;
                   if ((subjectpositions[j] + current.depth) < totallength)
                   {
-                    unsigned long additionalmatchlength =
+                    additionalmatchlength =
                                   lcp(encseq,
                                       subjectpositions[j] + current.depth,
                                       totallength,
@@ -269,7 +267,6 @@ int gt_pck_bitparallelism(const GtUchar *query,
             if (current.prefixofsuffixbits & mask)
             {
               realcalcquerypos++;
-              unsigned long querypos;
               if (islastround)
               {
                 querypos = querylen - (GT_INTWORDSIZE-i);
@@ -281,35 +278,35 @@ int gt_pck_bitparallelism(const GtUchar *query,
 
               bwtbound.start = current.lower;
               bwtbound.end = current.upper;
-              unsigned long depth = current.depth;
+              increaseddepth = current.depth;
 
-              while ( (querypos+depth) < querylen
+              while ( (querypos+increaseddepth) < querylen
                         && (bwtbound.start+1) < bwtbound.end )
               {
-                cc = *(query+querypos+depth);
+                cc = *(query+querypos+increaseddepth);
                 curSym = MRAEncMapSymbol(alphabet, cc);
                 seqpospair = BWTSeqTransformedPosPairOcc(bwtSeq, curSym,
                                             bwtbound.start,bwtbound.end);
                 bwtbound.start = bwtSeq->count[curSym] + seqpospair.a;
                 bwtbound.end = bwtSeq->count[curSym] + seqpospair.b;
-                depth++;
+                increaseddepth++;
               }
 
               /* calculate match length of every combination
                * between subjectpos and querypos */
               if (bwtbound.start+1 == bwtbound.end) {
-                unsigned long subjectpos =
+                subjectpos =
                 gt_voidpackedfindfirstmatchconvert(fmindex,
                                                    bwtbound.start,
-                                                   depth);
+                                                   increaseddepth);
                 if ( isleftmaximal(encseq,subjectpos,query,query+querypos) ) {
-                  unsigned long additionalmatchlength =
+                  additionalmatchlength =
                                 lcp(encseq,
-                                    subjectpos + depth,
+                                    subjectpos + increaseddepth,
                                     totallength,
-                                    query + querypos + depth,
+                                    query + querypos + increaseddepth,
                                     query + querylen);         /* qend */
-                  unsigned long matchlength = depth + additionalmatchlength;
+                  matchlength = increaseddepth + additionalmatchlength;
 
                   /*
                    * print or save the result
