@@ -28,7 +28,7 @@
 
 /*
   The following structure contains all information
-  specified for the function showquerydesc, showmatch and storemumcandidate
+  specified for the functions showquerydesc, showmatch and storemumcandidate
 */
 typedef struct
 {
