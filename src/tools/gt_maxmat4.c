@@ -296,8 +296,6 @@ static int gt_maxmat4_runner(GT_UNUSED int argc,
   {
     /* load packed index from suffxiarray */
     packedindex = gt_loadvoidBWTSeqForSA(gt_str_get(referencefile),
-                                       alphabet,
-                                       totallength,
                                        arguments->prebwt,  /* bool withpckbwt */
                                        err);
     if (packedindex == NULL)

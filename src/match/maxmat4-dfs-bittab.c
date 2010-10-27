@@ -122,7 +122,7 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
   GtUchar cc;
   Symbol curSym;
   const MRAEnc *alphabet;
-  struct GtUlongPair seqpospair;
+  GtUlongPair seqpospair;
   gt_assert(bwtSeq);
   const FMindex *fmindex = (const FMindex *)bwtSeq;
   alphabet = BWTSeqGetAlphabet(bwtSeq);

@@ -733,7 +733,7 @@ bool gt_packedindexmumcandidates(const BWTSeq *bwtSeq,
   GtUchar cc;
   const GtUchar *qptr;
   struct matchBound bwtbound;
-  struct GtUlongPair seqpospair;
+  GtUlongPair seqpospair;
   Symbol curSym;
   unsigned long subjectpos, matchlength = 0, additionalmatchlength;
   const MRAEnc *alphabet;
@@ -832,7 +832,7 @@ bool gt_packedindexmaxmatches(const BWTSeq *bwtSeq,
   GtUchar cc;
   const GtUchar *qptr;
   struct matchBound bwtbound;
-  struct GtUlongPair seqpospair;
+  GtUlongPair seqpospair;
   Symbol curSym;
   unsigned long subjectposthisline, matchlength = 0, \
           additionalmatchlengththisline, matchlengththisline, bwtnumber;
@@ -942,7 +942,7 @@ bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
   GtUchar cc;
   const GtUchar *qptr;
   struct matchBound bwtbound;
-  struct GtUlongPair seqpospair;
+  GtUlongPair seqpospair;
   Symbol curSym;
   unsigned long subjectpos, matchlength = 0, additionalmatchlength;
   const MRAEnc *alphabet;
@@ -1072,7 +1072,7 @@ bool gt_packedindexmaxmatchesusingprebwt(const BWTSeq *bwtSeq,
   GtUchar cc;
   const GtUchar *qptr;
   struct matchBound bwtbound;
-  struct GtUlongPair seqpospair;
+  GtUlongPair seqpospair;
   Symbol curSym;
   unsigned long subjectposthisline, matchlength = 0, \
           additionalmatchlengththisline, matchlengththisline, bwtnumber;
