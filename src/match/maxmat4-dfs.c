@@ -339,6 +339,7 @@ int gt_pck_bitparallelism(const GtUchar *query,
         {
           if ((current.depth+1) <= maxdepth)
           {
+						/* use bwt bounds from prebwt file */
             child.code = current.code * alphasize + idx;
             mbptr = mbtab[current.depth+1] + child.code;
             bwtbound.start = mbptr->lowerbound;
