@@ -136,6 +136,7 @@ int gt_pck_bitparallelism(const GtUchar *query,
   unsigned long subjectpositions_size, bwtnumber, subjectpos;
   unsigned long querypos, matchlength, additionalmatchlength, increaseddepth;
 
+  GT_STACK_INIT(&stack, resize);
   while (offset < querylen)
   {
     offsettimes++;
@@ -155,8 +156,6 @@ int gt_pck_bitparallelism(const GtUchar *query,
       gt_initeqsvectorrev(eqsvector,(unsigned long) alphasize,
                     query+offset,GT_INTWORDSIZE);
     }
-
-    GT_STACK_INIT(&stack, resize);
 
     root.depth = 0;
     root.lower = 0;
