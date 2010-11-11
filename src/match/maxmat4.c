@@ -116,7 +116,7 @@ static void showquerydesc(GT_UNUSED uint64_t unitnum,
   in the subject sequence as well as the start of the match in the query.
   Then it shows the relevant information as a triple of three integers.
 */
-static short int showmatch(const GtEncseq *encseq,
+static short int maxmat4_showmatch(const GtEncseq *encseq,
                              const GtUchar *query,
                              unsigned long querypos,
                              unsigned long querylength,
@@ -277,7 +277,7 @@ static void mumuniqueinquery(Matchprocessinfo *matchprocessinfo,
                             matchprocessinfo->showspecinfo->mumcandtab))
             && !ignoreprevious)
       {
-        if ( showmatch(matchprocessinfo->encseq,
+        if ( maxmat4_showmatch(matchprocessinfo->encseq,
                  query,
                  /* qstart - query = querypos <=> querypos + query = qstart */
                  (unsigned long) ((mumcandptr-1)->qstart-query),
@@ -286,7 +286,7 @@ static void mumuniqueinquery(Matchprocessinfo *matchprocessinfo,
                  (mumcandptr-1)->subjectpos,
                  matchprocessinfo->showspecinfo) != 0 )
         {
-          gt_error_set(err, "error in methode showmatch");
+          gt_error_set(err, "error in function maxmat4_showmatch");
           return;
         };
       }
@@ -298,7 +298,7 @@ static void mumuniqueinquery(Matchprocessinfo *matchprocessinfo,
     {
       mumcandptr = (MUMcandidate *)gt_array_get_last(\
                             matchprocessinfo->showspecinfo->mumcandtab);
-      if ( showmatch(matchprocessinfo->encseq,
+      if ( maxmat4_showmatch(matchprocessinfo->encseq,
                query,
                (unsigned long) (mumcandptr->qstart-query),
                querylen,
@@ -306,7 +306,7 @@ static void mumuniqueinquery(Matchprocessinfo *matchprocessinfo,
                mumcandptr->subjectpos,
                matchprocessinfo->showspecinfo)  != 0 )
       {
-        gt_error_set(err, "error in methode showmatch");
+        gt_error_set(err, "error in function maxmat4_showmatch");
         return;
       };
     }
@@ -462,12 +462,12 @@ int gt_findmum(const GtEncseq *encseq,
   else if (matchprocessinfo.matchmode == GT_MATCHMODE_MUMREFERENCE)
   {
     findmatchfunction = gt_voidpackedindexmumcandidates;
-    processmatch = showmatch;
+    processmatch = maxmat4_showmatch;
   }
   else if (matchprocessinfo.matchmode == GT_MATCHMODE_MAXMATCH)
   {
     findmatchfunction = gt_voidpackedindexmaxmatches;
-    processmatch = showmatch;
+    processmatch = maxmat4_showmatch;
   }
 
   matchprocessinfo.alphabet = alphabet;

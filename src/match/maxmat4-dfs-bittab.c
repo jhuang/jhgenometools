@@ -27,7 +27,7 @@
 
 #ifndef S_SPLINT_S
 /** the function check if the mapped sequence is left maximal */
-static bool isleftmaximal(const GtEncseq *encseq,
+static bool bittab_isleftmaximal(const GtEncseq *encseq,
                          unsigned long subjectpos,
                          const GtUchar *query,
                          const GtUchar *qstart)
@@ -55,7 +55,7 @@ static bool isleftmaximal(const GtEncseq *encseq,
  * qnewstart position refer to the first position >= leastlength
  * after general map-process with bwt
  */
-static unsigned long lcp(const GtEncseq *encseq,
+static unsigned long bittab_lcp(const GtEncseq *encseq,
                          unsigned long dbrightbound,
                          unsigned long totallength,
                          const GtUchar *qnewstart,
@@ -83,7 +83,7 @@ static unsigned long lcp(const GtEncseq *encseq,
   return (unsigned long) (qptr-qnewstart);
 }
 
-static int initialise_node(void *node)
+static int initialise_bittab_node(void *node)
 {
   int had_err = 0;
   Maxmat4NodeBittab *tobeinitialised;
@@ -154,7 +154,7 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
     eqsvector[i] = gt_bittab_new(bitlength);
   }
 
-  GT_STACK_INIT_WITH_INITFUNC(&stack, resize, initialise_node);
+  GT_STACK_INIT_WITH_INITFUNC(&stack, resize, initialise_bittab_node);
   while (offset < querylen)
   {
     /* printf("------offset=%lu\n",offset); */
@@ -256,12 +256,12 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
                * between subjectpos and querypos */
               for (j=0; j<subjectpositions_size; j++)
               {
-                if ( isleftmaximal(encseq,subjectpositions[j],\
+                if ( bittab_isleftmaximal(encseq,subjectpositions[j],\
                                    query,query+querypos) ) {
                   if ((subjectpositions[j] + current.depth) < totallength)
                   {
                     additionalmatchlength =
-                                  lcp(encseq,
+                                  bittab_lcp(encseq,
                                       subjectpositions[j] + current.depth,
                                       totallength,
                                       query + querypos + current.depth,
@@ -337,9 +337,10 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
                 gt_voidpackedfindfirstmatchconvert(fmindex,
                                                    bwtbound.start,
                                                    increaseddepth);
-                if ( isleftmaximal(encseq,subjectpos,query,query+querypos) ) {
+                if ( bittab_isleftmaximal(encseq,
+                                          subjectpos,query,query+querypos) ) {
                   additionalmatchlength =
-                                lcp(encseq,
+                                bittab_lcp(encseq,
                                     subjectpos + increaseddepth,
                                     totallength,
                                     query + querypos + increaseddepth,

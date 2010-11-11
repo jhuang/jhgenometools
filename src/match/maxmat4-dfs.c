@@ -27,7 +27,7 @@
 
 #ifndef S_SPLINT_S
 /** the function check if the mapped sequence is left maximal */
-static bool isleftmaximal(const GtEncseq *encseq,
+static bool bit_isleftmaximal(const GtEncseq *encseq,
                          unsigned long subjectpos,
                          const GtUchar *query,
                          const GtUchar *qstart)
@@ -55,7 +55,7 @@ static bool isleftmaximal(const GtEncseq *encseq,
  * qnewstart position refer to the first position >= leastlength
  * after general map-process with bwt
  */
-static unsigned long lcp(const GtEncseq *encseq,
+static unsigned long bit_lcp(const GtEncseq *encseq,
                          unsigned long dbrightbound,
                          unsigned long totallength,
                          const GtUchar *qnewstart,
@@ -218,12 +218,12 @@ int gt_pck_bitparallelism(const GtUchar *query,
                * between subjectpos and querypos */
               for (j=0; j<subjectpositions_size; j++)
               {
-                if ( isleftmaximal(encseq,subjectpositions[j],\
+                if ( bit_isleftmaximal(encseq,subjectpositions[j],\
                                    query,query+querypos) ) {
                   if ((subjectpositions[j] + current.depth) < totallength)
                   {
                     additionalmatchlength =
-                                  lcp(encseq,
+                                  bit_lcp(encseq,
                                       subjectpositions[j] + current.depth,
                                       totallength,
                                       query + querypos + current.depth,
@@ -299,9 +299,10 @@ int gt_pck_bitparallelism(const GtUchar *query,
                 gt_voidpackedfindfirstmatchconvert(fmindex,
                                                    bwtbound.start,
                                                    increaseddepth);
-                if ( isleftmaximal(encseq,subjectpos,query,query+querypos) ) {
+                if ( bit_isleftmaximal(encseq,
+                                       subjectpos,query,query+querypos) ) {
                   additionalmatchlength =
-                                lcp(encseq,
+                                bit_lcp(encseq,
                                     subjectpos + increaseddepth,
                                     totallength,
                                     query + querypos + increaseddepth,

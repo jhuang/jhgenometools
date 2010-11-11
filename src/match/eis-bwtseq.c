@@ -659,7 +659,7 @@ gt_BWTSeqVerifyIntegrity(BWTSeq *bwtSeq, const char *projectName,
 }
 
 /** the function check if the mapped sequence is left maximal */
-static bool isleftmaximal(const GtEncseq *encseq,
+static bool eis_isleftmaximal(const GtEncseq *encseq,
                          unsigned long subjectpos,
                          const GtUchar *query,
                          const GtUchar *qstart)
@@ -687,7 +687,7 @@ static bool isleftmaximal(const GtEncseq *encseq,
  * qnewstart position refer to the first position >= leastlength
  * after general map-process with bwt
  */
-static unsigned long lcp(const GtEncseq *encseq,
+static unsigned long eis_lcp(const GtEncseq *encseq,
                          unsigned long dbrightbound,
                          unsigned long totallength,
                          const GtUchar *qnewstart,
@@ -782,13 +782,13 @@ bool gt_packedindexmumcandidates(const BWTSeq *bwtSeq,
                                                  matchlength);
 
       /* check if it is left maximal */
-      if (isleftmaximal(encseq,subjectpos,query,qstart)) {
+      if (eis_isleftmaximal(encseq,subjectpos,query,qstart)) {
         /*
          * calculate long common prefix
          * between reference sequence from (subjectpos + matchlength)
          * against query sequence from qptr+1
          */
-        additionalmatchlength = lcp(encseq,
+        additionalmatchlength = eis_lcp(encseq,
                                     subjectpos+matchlength,
                                     totallength,
                                     qptr+1,
@@ -879,7 +879,7 @@ bool gt_packedindexmaxmatches(const BWTSeq *bwtSeq,
                                                    bwtnumber,
                                                    matchlength);
         /* every line moves forwards */
-        if ( isleftmaximal(encseq,subjectposthisline,query,qstart) ) {
+        if ( eis_isleftmaximal(encseq,subjectposthisline,query,qstart) ) {
           /*
            * calculate long common prefix for every line
            * between this reference sequence snippet
@@ -889,7 +889,7 @@ bool gt_packedindexmaxmatches(const BWTSeq *bwtSeq,
           if ((subjectposthisline + matchlength) < totallength)
           {
             additionalmatchlengththisline =\
-                                    lcp(encseq,
+                                    eis_lcp(encseq,
                                         subjectposthisline + matchlength,
                                         totallength,
                                         qptr+1,
@@ -1019,13 +1019,13 @@ bool gt_packedindexmumcandidatesusingprebwt(const BWTSeq *bwtSeq,
                                                  matchlength);
 
       /* check if it is left maximal */
-      if (isleftmaximal(encseq,subjectpos,query,qstart)) {
+      if (eis_isleftmaximal(encseq,subjectpos,query,qstart)) {
         /*
          * calculate long common prefix
          * between reference sequence from (subjectpos + matchlength)
          * against query sequence from qptr+1
          */
-        additionalmatchlength = lcp(encseq,
+        additionalmatchlength = eis_lcp(encseq,
                                     subjectpos+matchlength,
                                     totallength,
                                     qptr+1,
@@ -1146,7 +1146,7 @@ bool gt_packedindexmaxmatchesusingprebwt(const BWTSeq *bwtSeq,
                                                    bwtnumber,
                                                    matchlength);
         /* every line moves forwards */
-        if ( isleftmaximal(encseq,subjectposthisline,query,qstart) ) {
+        if ( eis_isleftmaximal(encseq,subjectposthisline,query,qstart) ) {
           /*
            * calculate long common prefix for every line
            * between this reference sequence snippet
@@ -1156,7 +1156,7 @@ bool gt_packedindexmaxmatchesusingprebwt(const BWTSeq *bwtSeq,
           if ((subjectposthisline + matchlength) < totallength)
           {
             additionalmatchlengththisline =\
-                                    lcp(encseq,
+                                    eis_lcp(encseq,
                                         subjectposthisline + matchlength,
                                         totallength,
                                         qptr+1,

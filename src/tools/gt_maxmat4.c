@@ -208,7 +208,7 @@ static GtOptionParser* gt_maxmat4_option_parser_new(void *tool_arguments)
 
 static int gt_maxmat4_arguments_check(GT_UNUSED int rest_argc,
                                       void *tool_arguments,
-                                      GtError *err)
+                                      GT_UNUSED GtError *err)
 {
   GT_UNUSED GtMaxmat4Arguments *arguments = (GtMaxmat4Arguments*)tool_arguments;
   int had_err = 0;
