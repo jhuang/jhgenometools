@@ -121,7 +121,7 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
   unsigned long moveunits;
   unsigned long subjectpositions_size, bwtnumber, subjectpos;
   unsigned long querypos, matchlength, additionalmatchlength, increaseddepth;
-  unsigned long stackdepth, stackmaxdepth, stackdepth_idx;
+  unsigned long stackdepth, stackmaxdepth = 0UL, stackdepth_idx;
 
   GtUchar alphasize;
   unsigned int numofchars;
@@ -142,18 +142,19 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
   unsigned long *rangeOccs;
   rangeOccs = gt_calloc((size_t) GT_MULT2(alphasize), sizeof (*rangeOccs));
 
-  GtBittab **eqsvector;
   /* tmpcurrentbittab store the bittab of current node temporarily,
    * tmpbittab has 2 functions, first, it was used to assist to generate
    * eqsvector, secondly, it was used to store bittab of child node temporarily
    */
   GtBittab *tmpcurrentbittab =gt_bittab_new(bitlength),
             *tmpbittab = gt_bittab_new(bitlength);
+  GtBittab **eqsvector;
   eqsvector = gt_malloc(sizeof (GtBittab*) * alphasize * leastlength);
   for (i=0; i<alphasize*leastlength; i++) {
     eqsvector[i] = gt_bittab_new(bitlength);
   }
 
+  GT_STACK_INIT_WITH_INITFUNC(&stack, resize, initialise_node);
   while (offset < querylen)
   {
     /* printf("------offset=%lu\n",offset); */
@@ -182,19 +183,20 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
       }
     }
 
-    GT_STACK_INIT_WITH_INITFUNC(&stack, resize, initialise_node);
-
     GT_STACK_NEXT_FREE(&stack,root);
     root->depth = 0;
     root->lower = 0;
     root->upper = totallength + 1;
-    root->prefixofsuffixbits  = gt_bittab_new(bitlength);
+    /* malloc the space if next free was not allocated before */
+    if (root->prefixofsuffixbits == NULL)
+    {
+      root->prefixofsuffixbits  = gt_bittab_new(bitlength);
+    }
     for (i = 0; i < bitlength; i++) {
       gt_bittab_set_bit(root->prefixofsuffixbits, i);
     }  /* init all positions as 1 */
     root->code = 0;
     stackdepth = 1UL;
-    stackmaxdepth = 0;
 
     if (showtime)
     {
@@ -205,6 +207,11 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
 
     while (!GT_STACK_ISEMPTY(&stack))
     {
+      if (stackmaxdepth < stackdepth)
+      {
+        stackmaxdepth = stackdepth;
+      }
+
       current = GT_STACK_POP(&stack);
       stackdepth--;
       gt_assert(current.lower < current.upper);
@@ -410,10 +417,6 @@ int gt_pck_bitparallelism_bittab(const GtUchar *query,
               child->depth = current.depth + 1;  /* record match length */
               child->code = code;
               stackdepth++;
-              if (stackmaxdepth < stackdepth)
-              {
-                stackmaxdepth = stackdepth;
-              }
             }
           }
         }
