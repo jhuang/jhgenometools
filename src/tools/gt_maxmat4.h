@@ -1,4 +1,5 @@
 /*
+  Copyright (c) 2010 Jiabin Huang <jiabin.huang@studium.uni-hamburg.de>
   Copyright (c) 2010 Center for Bioinformatics, University of Hamburg
 
   Permission to use, copy, modify, and distribute this software for any
@@ -19,7 +20,7 @@
 
 #include "core/tool.h"
 
-/* the maximal matches */
+/* the tool maxmat4 for computing maximal matches, MUM-candidates and MUMs */
 GtTool* gt_maxmat4(void);
 
 #endif
