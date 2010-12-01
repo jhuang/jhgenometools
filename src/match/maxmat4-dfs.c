@@ -104,6 +104,7 @@ int gt_pck_bitparallelism(const GtUchar *query,
   int had_err = 0;
   GtStackMaxmat4Node stack;
   Maxmat4Node root, current, child;
+  child.code = 0;
 
   unsigned long resize = 64UL;
   unsigned long rangesize, idx;

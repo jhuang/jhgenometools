@@ -835,7 +835,7 @@ bool gt_packedindexmaxmatches(const BWTSeq *bwtSeq,
   GtUlongPair seqpospair;
   Symbol curSym;
   unsigned long subjectposthisline, matchlength = 0, \
-          additionalmatchlengththisline, matchlengththisline, bwtnumber;
+          additionalmatchlengththisline, matchlengththisline = 0, bwtnumber;
   const MRAEnc *alphabet;
 
   gt_assert(bwtSeq && qstart);
@@ -1075,7 +1075,7 @@ bool gt_packedindexmaxmatchesusingprebwt(const BWTSeq *bwtSeq,
   GtUlongPair seqpospair;
   Symbol curSym;
   unsigned long subjectposthisline, matchlength = 0, \
-          additionalmatchlengththisline, matchlengththisline, bwtnumber;
+          additionalmatchlengththisline, matchlengththisline = 0, bwtnumber;
   const MRAEnc *alphabet;
 
   const Mbtab *mbptr;
